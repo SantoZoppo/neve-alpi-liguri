@@ -228,7 +228,7 @@ async function cached(key,ttl,fn){
 
 /* Toglie i giorni già passati (i dati salvati possono essere di ieri) */
 function trimPast(r){if(!r)return r;const today=new Date().toLocaleDateString('sv-SE',{timeZone:'Europe/Rome'});
-  const cut=o=>{for(const part of [o.daily,o.hourly]){if(!part?.time)continue;const keep=part.time.map(t=>t.slice(0,10)>=today);
+  const cut=o=>{const dt=o.daily?.time||[],ds=o.daily?.snowfall_sum||[];o.prev=dt.reduce((a,t,i)=>t<today?a+(ds[i]||0):a,0);for(const part of [o.daily,o.hourly]){if(!part?.time)continue;const keep=part.time.map(t=>t.slice(0,10)>=today);
     if(!keep.some(Boolean))continue;for(const k in part)if(Array.isArray(part[k]))part[k]=part[k].filter((_,i)=>keep[i])}return o};
   return Array.isArray(r)?r.map(cut):cut(r)}
 function build(results){
@@ -242,7 +242,7 @@ function build(results){
       /* Correzione: il modello calcola la neve sul suo terreno; se alla quota della località fa più di 0°, parte è pioggia/neve bagnata che non attacca */
       const hs=hs0.map((v,j)=>v==null?v:v*wet(htp[j]));
       const snow=snow0&&d.time.map((t,k)=>{if(snow0[k]==null)return null;let a=0,b=0;h.time.forEach((ht,j)=>{if(ht.startsWith(t)&&hs0[j]){a+=hs[j];b+=hs0[j]}});return b?snow0[k]*a/b:snow0[k]});
-      per[id]={times:d.time,snow,prec,tx,tn,fz:d.time.map(t=>{let mn=null;h.time.forEach((ht,j)=>{if(ht.startsWith(t)&&hf[j]!=null&&(mn==null||hf[j]<mn))mn=hf[j]});return mn}),
+      per[id]={prev:o.prev||0,times:d.time,snow,prec,tx,tn,fz:d.time.map(t=>{let mn=null;h.time.forEach((ht,j)=>{if(ht.startsWith(t)&&hf[j]!=null&&(mn==null||hf[j]<mn))mn=hf[j]});return mn}),
         hrs:d.time.map(t=>{const a=[];h.time.forEach((ht,j)=>{if(ht.startsWith(t))a.push(hs[j])});return a}),
         ht:d.time.map(t=>{const a=[];h.time.forEach((ht,j)=>{if(ht.startsWith(t))a.push(htp[j]??null)});return a})};
     });
@@ -338,7 +338,8 @@ function renderLocs(){
         <div class="detail" id="d-${p.id}">${detail(p,p.days[sel])}</div>
         <div class="charts">
           <div><h4>Neve secondo ogni modello</h4>
-            <div class="tg"><button data-mode="${p.id}" data-v="day" aria-pressed="${state.mode[p.id]==='day'}">Al giorno</button><button data-mode="${p.id}" data-v="cum" aria-pressed="${state.mode[p.id]==='cum'}">Totale accumulato</button></div>
+            <div class="tg"><button data-mode="${p.id}" data-v="day" aria-pressed="${state.mode[p.id]==='day'}">Al giorno</button><button data-mode="${p.id}" data-v="cum" aria-pressed="${state.mode[p.id]==='cum'}">Stima al suolo</button></div>
+            <p class="sub">"Stima al suolo": neve caduta ieri più quella prevista, che si assesta e si scioglie quando fa sopra zero. Stima indicativa.</p>
             <div class="fig"><svg id="cs-${p.id}" role="img" aria-label="Neve prevista da ogni modello a ${esc(p.name)}"></svg></div>
             <div class="keys">${keys}</div></div>
           <div><h4>Zero termico e quota della località</h4><p class="sub">Sotto la linea tratteggiata le precipitazioni cadono come neve.</p>
@@ -361,9 +362,12 @@ function lineChart(svg,times,series,opt){
   const all=series.flatMap(s=>s.vals).filter(v=>v!=null).concat(opt.ref!=null?[opt.ref]:[]);
   let lo=opt.min0?0:Math.min(...all),hi=Math.max(opt.minMax||0,...all);
   if(!opt.min0){const pad=(hi-lo)*.08||100;lo-=pad;hi+=pad}
+  /* Scala con numeri tondi (es. 250, 500, 1000) */
+  const nice=x=>{const e=10**Math.floor(Math.log10(x)),f=x/e;return(f<=1?1:f<=2?2:f<=2.5?2.5:f<=5?5:10)*e},st=nice((hi-lo)/4||1);
+  lo=Math.floor(lo/st)*st;const G=Math.max(1,Math.ceil((hi-lo)/st-1e-9));hi=lo+G*st;
   const x=i=>L+i*(W-L-R)/(n-1),y=v=>T+(1-(v-lo)/(hi-lo||1))*(H-T-B);
   let g='';
-  for(let k=0;k<=4;k++){const v=lo+(hi-lo)*k/4,yy=y(v);g+=`<line x1="${L}" x2="${W-R}" y1="${yy}" y2="${yy}" stroke="var(--line)"/><text x="${L-6}" y="${yy+4}" text-anchor="end">${Math.round(v)}${k===4?opt.unit:''}</text>`}
+  for(let k=0;k<=G;k++){const v=lo+st*k,yy=y(v);g+=`<line x1="${L}" x2="${W-R}" y1="${yy}" y2="${yy}" stroke="var(--line)"/><text x="${L-6}" y="${yy+4}" text-anchor="end">${r1(v)}${k===G?opt.unit:''}</text>`}
   const step=small?2:1;
   times.forEach((t,i)=>{if(i%step===0)g+=`<text x="${x(i)}" y="${H-6}" text-anchor="middle">${esc(small?new Date(t+'T12:00').getDate():fmtDate(t))}</text>`});
   if(opt.ref!=null)g+=`<line x1="${L}" x2="${W-R}" y1="${y(opt.ref)}" y2="${y(opt.ref)}" stroke="var(--acc)" stroke-width="2" stroke-dasharray="6 5"/><text x="${W-R}" y="${y(opt.ref)-6}" text-anchor="end" style="fill:var(--acc)">${esc(opt.refLabel)}</text>`;
@@ -376,8 +380,11 @@ function lineChart(svg,times,series,opt){
 function seriesFor(p,key,cum){
   const out=OK_MODELS.filter(m=>!state.hidden[p.id][m.id]).map(m=>{
     let v=key==='fz'?p.per[m.id].fz:(p.per[m.id].snow||[]).slice();
-    if(cum){let a=0;v=v.map(z=>z==null?null:(a+=z))}
-    const main=m.id===(key==='fz'?WX_M:SNOW_M);
+    /* Stima al suolo: la neve vecchia si assesta (-15% al giorno) e si scioglie quando fa sopra zero (1,5 cm per grado al giorno) */
+    if(cum){let a=p.per[m.id].prev||0;const ht=p.per[m.id].ht;v=v.map((z,i)=>{if(z==null)return null;const gg=(ht[i]||[]).reduce((s,t)=>s+(t>0?t:0),0)/24;return a=Math.max(0,a*.85+z-gg*1.5)})}
+    /* ECMWF su Open-Meteo non dà lo zero termico: in quel caso la linea principale è ICON */
+    const fzM=OK_MODELS.some(x=>x.id===WX_M)&&p.per[WX_M].fz?.some(z=>z!=null)?WX_M:SNOW_M;
+    const main=m.id===(key==='fz'?fzM:SNOW_M);
     return{col:m.col,vals:v,w:main?4.5:1.8,op:main?1:.55,main};
   });
   return out.sort((a,b)=>a.main-b.main);
