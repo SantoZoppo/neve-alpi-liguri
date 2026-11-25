@@ -76,7 +76,9 @@ footer{color:var(--mute);font-size:13px}
 .egg{position:absolute;right:3vw;bottom:clamp(24px,4vw,60px);width:clamp(60px,7vw,96px);aspect-ratio:100/130;z-index:2}
 .egg svg{width:100%;height:100%;opacity:0;transition:opacity .5s;overflow:visible}
 .egg:hover svg,.egg.on svg{opacity:.55}
-.egg .arm{transform-origin:66px 56px;transform-box:view-box}
+#egg{right:calc(3vw + clamp(60px,7vw,96px) + 14px)}
+.egg.snowman .arm{transform-origin:66px 56px}
+.egg .arm{transform-origin:57px 40px;transform-box:view-box}
 .egg:hover .arm,.egg.on .arm{animation:wave .5s ease-in-out infinite alternate}
 @keyframes wave{from{transform:rotate(-14deg)}to{transform:rotate(18deg)}}
 @media(prefers-reduced-motion:reduce){.egg .arm{animation:none!important}.egg svg{transition:none}}
@@ -133,6 +135,23 @@ footer a,.sources a{color:var(--snow)}
   </svg>
   <div class="egg" id="egg" aria-hidden="true">
     <svg viewBox="0 0 100 130">
+      <!-- Cowboy che si tocca il cappello, mano sulla fondina, stivali con speroni -->
+      <g fill="#0b1d33" stroke="#0b1d33" stroke-linecap="round" stroke-linejoin="round">
+        <g transform="rotate(-12 50 16)"><ellipse cx="50" cy="16" rx="21" ry="3.6" stroke="none"/><path d="M39 16Q38 3 50 5Q62 3 61 16Z" stroke="none"/></g>
+        <circle cx="50" cy="27" r="8" stroke="none"/><path d="M45 34h10l-5 6z" stroke="none"/>
+        <rect x="42" y="36" width="16" height="28" rx="4" stroke="none"/><rect x="40" y="61" width="20" height="5" rx="1" stroke="none"/>
+        <rect x="35" y="64" width="6" height="13" rx="2" stroke="none"/>
+        <path d="M44 40 34 52 39 63" stroke-width="6" fill="none"/>
+        <path d="M47 66 43 106M54 66 61 104" stroke-width="7" fill="none"/>
+        <path d="M37 104h10v9H34zM57 101l9-2 6 8-4 5-12-3z" stroke="none"/>
+        <circle cx="33" cy="112" r="2.6" fill="none" stroke-width="1.6"/><circle cx="57" cy="112" r="2.6" fill="none" stroke-width="1.6"/>
+        <g class="arm"><path d="M57 40 69 31 63 17" stroke-width="6" fill="none"/><circle cx="63" cy="15" r="3.6" stroke="none"/></g>
+      </g>
+      <path d="M53 43l1.3 2.8 3 .3-2.3 1.9.8 3-2.8-1.7-2.7 1.7.8-3-2.3-1.9 3-.3z" fill="#ffd54a"/>
+    </svg>
+  </div>
+  <div class="egg snowman" aria-hidden="true">
+    <svg viewBox="0 0 100 130">
       <g fill="#0b1d33">
         <circle cx="50" cy="98" r="28"/><circle cx="50" cy="58" r="19"/><circle cx="50" cy="28" r="13"/>
         <rect x="36" y="9" width="28" height="5" rx="2"/><rect x="41" y="-6" width="18" height="17" rx="2"/>
@@ -172,7 +191,7 @@ const PLACES=[
   {id:'garessio',name:'Garessio 2000',area:'Colle di Casotto, Cuneo',lat:44.2165,lon:7.9446,alt:1381,foto:'',cam:{img:'https://webcam.torinometeo.org/api/webcams/23/last/',by:'TorinoMeteo'},zone:[[44.185,7.90],[44.245,8.04]],wiki:[['it','Garessio 2000'],['it','Colle di Casotto'],['it','Garessio']]},
   {id:'monesi',name:'Monesi',area:'Mendatica / Triora, Imperia',lat:44.0770,lon:7.7470,alt:1310,foto:'',cam:{img:'https://retelimet.centrometeoligure.it/stazioni/meteo-piaggia/data/webcam/piaggia.jpg',by:'Centro Meteo Ligure, Piaggia'},zone:[[44.04,7.72],[44.13,7.90]],wiki:[['it','Monesi di Triora'],['it','Monesi'],['it','Monesi di Mendatica'],['it','Mendatica']]},
   {id:'oggia',name:"Colle d'Oggia",area:'Valle Argentina, Imperia',lat:43.9990,lon:7.8330,alt:1167,foto:'',cam:{img:'https://imgproxy.windy.com/_/full/plain/current/1793902352/original.jpg?v=2',by:'Relivecam via Windy, Montalto Ligure (6 km a sud)'},zone:[[43.955,7.785],[44.035,7.905]],wiki:[['it',"Colle d'Oggia"],['it','Rezzo']]},
-  {id:'turini',name:'Colle del Turini',area:'Alpi Marittime, Francia',lat:43.9775,lon:7.3914,alt:1607,foto:'',cam:{img:'https://www.inforoutes06.fr/webcam/CAM096/snap5.jpg',by:'Inforoutes 06'},zone:[[43.925,7.30],[44.01,7.47]],wiki:[['it','Colle del Turini'],['fr','Col de Turini'],['en','Col de Turini']]}
+  {id:'turini',med:true,name:'Colle del Turini',area:'Alpi Marittime, Francia',lat:43.9775,lon:7.3914,alt:1607,foto:'',cam:{img:'https://www.inforoutes06.fr/webcam/CAM096/snap5.jpg',by:'Inforoutes 06'},zone:[[43.925,7.30],[44.01,7.47]],wiki:[['it','Colle del Turini'],['fr','Col de Turini'],['en','Col de Turini']]}
 ];
 const MODELS=[
   {id:'ecmwf_ifs025',name:'ECMWF',who:'Centro europeo',col:'#1f6fd1'},
@@ -252,7 +271,8 @@ function build(results){
       const pv=OK_MODELS.map(m=>per[m.id].prec?.[k]).filter(v=>v!=null);
       /* Neve da ICON (se non arriva così lontano: ECMWF); meteo da ECMWF (se manca: mediana degli altri) */
       const I=per[SNOW_M],E=per[WX_M];
-      const src=I?.snow?.[k]!=null?SNOW_M:E?.snow?.[k]!=null?WX_M:null,S=src?per[src]:null;
+      /* Località con med:true (Turini): neve = valore di mezzo tra tutti i modelli */
+      const src=pl.med?null:I?.snow?.[k]!=null?SNOW_M:E?.snow?.[k]!=null?WX_M:null,S=src?per[src]:null;
       const hrs=[],hm=[],hlo=[],hhi=[];for(let hh=0;hh<24;hh++){const v=OK_MODELS.map(m=>per[m.id].hrs[k]?.[hh]).filter(x=>x!=null);
         const main=S?.hrs[k]?.[hh];if(main!=null?main>0.05:(v.length&&v.filter(x=>x>0.05).length>=v.length/2))hrs.push(hh);
         hm.push(main??(v.length?median(v):null));hlo.push(v.length?Math.min(...v):null);hhi.push(v.length?Math.max(...v):null)}
@@ -275,14 +295,14 @@ function renderSum(){
     const n=next(p);
     return`<button class="s" data-go="${p.id}"><h3>${esc(p.name)}</h3><div class="alt">${p.alt} m</div>
       <div class="big${n?'':' none'}">${n?r1(n.snow)+' cm':'Niente neve'}</div>
-      <div class="when">${n?'Prossima neve: '+esc(fmtLong(n.t))+` · ICON · ${n.yes}/${n.n} modelli d'accordo`+(n.far?' · incerto':''):'nei prossimi 7 giorni'}</div></button>`;
+      <div class="when">${n?'Prossima neve: '+esc(fmtLong(n.t))+` · ${n.src?'ICON':'valore di mezzo'} · ${n.yes}/${n.n} modelli d'accordo`+(n.far?' · incerto':''):'nei prossimi 7 giorni'}</div></button>`;
   }).join('');
   document.getElementById('sources').textContent=`Modelli usati in questo momento: ${OK_MODELS.map(m=>m.name+' ('+m.who+')').join(', ')}.`+(DATA_TIME?` Dati aggiornati alle ${new Date(DATA_TIME).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Rome'})}.`:'');
 }
 
 function detail(p,x){
   const k=kind(x);let s=`<strong>${esc(fmtLong(x.t))}</strong> a ${esc(p.name)}: `;
-  if(k==='snow'||k==='lite')s+=`circa ${r1(x.snow)} cm di neve fresca ${esc(hoursText(x.hrs))} secondo ${x.src===WX_M?'ECMWF (ICON non arriva così lontano)':'ICON'}. Tutti i modelli insieme vanno da ${r1(x.lo)} a ${r1(x.hi)} cm; ${x.yes} su ${x.n} prevedono neve.`;
+  if(k==='snow'||k==='lite')s+=`circa ${r1(x.snow)} cm di neve fresca ${esc(hoursText(x.hrs))} secondo ${!x.src?'il valore di mezzo tra i modelli':x.src===WX_M?'ECMWF (ICON non arriva così lontano)':'ICON'}. Tutti i modelli insieme vanno da ${r1(x.lo)} a ${r1(x.hi)} cm; ${x.yes} su ${x.n} prevedono neve.`;
   else if(k==='rain')s+=`${r1(x.prec)} mm di precipitazioni, ma troppo caldo per la neve a ${p.alt} m.`;
   else s+='nessuna precipitazione prevista.';
   if(x.tmin!=null)s+=` Meteo secondo ECMWF: temperature tra ${r1(x.tmin)}° e ${r1(x.tmax)}°.`;
@@ -327,25 +347,25 @@ function renderLocs(){
           <span class="tot">${r1(tot7)} cm nei prossimi 7 giorni</span></div>
         <h4>Dove nevica di più · <span id="mt-${p.id}"></span></h4><p class="sub">Le prossime 8 ore, ora per ora: valore di mezzo tra ICON, ICON-2I e Météo-France, i modelli più dettagliati. Sposta il cursore per cambiare ora.</p>
         <div class="maprow"><div><div class="mm" id="mm-${p.id}"><div class="msg">Caricamento mappa…</div></div>
-        <div class="hr"><button data-hp="${p.id}" data-dv="-1" aria-label="Ora precedente">‹</button><input type="range" min="0" max="8" step="1" value="0" id="hr-${p.id}" data-hr="${p.id}" aria-label="Ore da adesso"><button data-hp="${p.id}" data-dv="1" aria-label="Ora successiva">›</button></div>
+        <div class="hr"><button data-hp="${p.id}" data-dv="-1" aria-label="Mezz'ora prima">‹</button><input type="range" min="0" max="8" step="0.5" value="0" id="hr-${p.id}" data-hr="${p.id}" aria-label="Ore da adesso"><button data-hp="${p.id}" data-dv="1" aria-label="Mezz'ora dopo">›</button></div>
         <div class="scale"><span><i style="background:#ffd600"></i>Debole: 0,1–0,5 cm/h</span><span><i style="background:#ff8200"></i>Moderata: 0,5–1,5 cm/h</span><span><i style="background:#dc1e1e"></i>Forte: oltre 1,5 cm/h</span></div>
         <p class="note" id="mi-${p.id}"></p></div>
         ${camHTML(p)}</div>
       </div>
       <div class="inner">
-        <h4>Neve giorno per giorno</h4><p class="sub">Neve secondo ICON. Tocca un giorno per i dettagli.</p>
+        <h4>Neve giorno per giorno</h4><p class="sub">Neve secondo ${p.med?'il valore di mezzo tra i modelli':'ICON'}. Tocca un giorno per i dettagli.</p>
         <div class="days" role="group" aria-label="Neve giorno per giorno a ${esc(p.name)}">${cols}</div>
         <div class="detail" id="d-${p.id}">${detail(p,p.days[sel])}</div>
         <div class="charts">
           <div><h4>Neve secondo ogni modello</h4>
             <div class="tg"><button data-mode="${p.id}" data-v="day" aria-pressed="${state.mode[p.id]==='day'}">Al giorno</button><button data-mode="${p.id}" data-v="cum" aria-pressed="${state.mode[p.id]==='cum'}">Stima al suolo</button></div>
-            <p class="sub">"Stima al suolo": neve caduta ieri più quella prevista, che si assesta e si scioglie quando fa sopra zero. Stima indicativa.</p>
+            <p class="sub">"Stima al suolo": prossimi 3 giorni, ora per ora. Neve caduta ieri più quella prevista, che si assesta e si scioglie quando fa sopra zero. Stima indicativa.</p>
             <div class="fig"><svg id="cs-${p.id}" role="img" aria-label="Neve prevista da ogni modello a ${esc(p.name)}"></svg></div>
             <div class="keys">${keys}</div></div>
           <div><h4>Zero termico e quota della località</h4><p class="sub">Sotto la linea tratteggiata le precipitazioni cadono come neve.</p>
             <div class="fig"><svg id="cf-${p.id}" role="img" aria-label="Zero termico previsto a ${esc(p.name)}"></svg></div>
             <div class="keys">${keys}</div></div>
-          <div style="grid-column:1/-1"><h4>Neve ora per ora · <span id="hd-${p.id}">${esc(fmtLong(p.days[sel].t))}</span></h4><p class="sub">Barre: neve all'ora secondo ICON, linea sottile: da minimo a massimo tra tutti i modelli. Linea arancio: temperatura secondo ECMWF. Tocca un giorno sopra per cambiare.</p>
+          <div style="grid-column:1/-1"><h4>Neve ora per ora · <span id="hd-${p.id}">${esc(fmtLong(p.days[sel].t))}</span></h4><p class="sub">Barre: neve all'ora secondo ${p.med?'il valore di mezzo tra i modelli':'ICON'}, linea sottile: da minimo a massimo tra tutti i modelli. Linea arancio: temperatura secondo ECMWF. Tocca un giorno sopra per cambiare.</p>
             <div class="fig"><svg id="ch-${p.id}" role="img" aria-label="Neve ora per ora a ${esc(p.name)}"></svg></div></div>
         </div>
       </div></section>`;
@@ -369,7 +389,9 @@ function lineChart(svg,times,series,opt){
   let g='';
   for(let k=0;k<=G;k++){const v=lo+st*k,yy=y(v);g+=`<line x1="${L}" x2="${W-R}" y1="${yy}" y2="${yy}" stroke="var(--line)"/><text x="${L-6}" y="${yy+4}" text-anchor="end">${r1(v)}${k===G?opt.unit:''}</text>`}
   const step=small?2:1;
-  times.forEach((t,i)=>{if(i%step===0)g+=`<text x="${x(i)}" y="${H-6}" text-anchor="middle">${esc(small?new Date(t+'T12:00').getDate():fmtDate(t))}</text>`});
+  times.forEach((t,i)=>{const lb=opt.lab?opt.lab(t,i):i%step===0?(small?new Date(t+'T12:00').getDate():fmtDate(t)):null;if(lb==null)return;
+    if(opt.lab&&t.endsWith('T00:00')&&i>0)g+=`<line x1="${x(i)}" x2="${x(i)}" y1="${T}" y2="${H-B}" stroke="var(--line)" stroke-dasharray="3 4"/>`;
+    g+=`<text x="${x(i)}" y="${H-6}" text-anchor="middle"${opt.lab&&t.endsWith('T00:00')?' font-weight="700"':''}>${esc(String(lb))}</text>`});
   if(opt.ref!=null)g+=`<line x1="${L}" x2="${W-R}" y1="${y(opt.ref)}" y2="${y(opt.ref)}" stroke="var(--acc)" stroke-width="2" stroke-dasharray="6 5"/><text x="${W-R}" y="${y(opt.ref)-6}" text-anchor="end" style="fill:var(--acc)">${esc(opt.refLabel)}</text>`;
   series.forEach(s=>{
     let d='',pen=false;s.vals.forEach((v,i)=>{if(v==null){pen=false;return}d+=(pen?'L':'M')+x(i).toFixed(1)+' '+y(v).toFixed(1);pen=true});
@@ -384,12 +406,25 @@ function seriesFor(p,key,cum){
     if(cum){let a=p.per[m.id].prev||0;const ht=p.per[m.id].ht;v=v.map((z,i)=>{if(z==null)return null;const gg=(ht[i]||[]).reduce((s,t)=>s+(t>0?t:0),0)/24;return a=Math.max(0,a*.85+z-gg*1.5)})}
     /* ECMWF su Open-Meteo non dà lo zero termico: in quel caso la linea principale è ICON */
     const fzM=OK_MODELS.some(x=>x.id===WX_M)&&p.per[WX_M].fz?.some(z=>z!=null)?WX_M:SNOW_M;
-    const main=m.id===(key==='fz'?fzM:SNOW_M);
+    const main=key==='fz'?m.id===fzM:!p.med&&m.id===SNOW_M;
     return{col:m.col,vals:v,w:main?4.5:1.8,op:main?1:.55,main};
   });
   return out.sort((a,b)=>a.main-b.main);
 }
-function snowChart(p){const cum=state.mode[p.id]==='cum';lineChart(document.getElementById('cs-'+p.id),p.days.map(d=>d.t),seriesFor(p,'snow',cum),{min0:true,minMax:cum?10:4,unit:' cm'})}
+/* Stima al suolo ora per ora sui prossimi 3 giorni, per ogni modello */
+function groundSeries(p,nd){
+  return OK_MODELS.filter(m=>!state.hidden[p.id][m.id]).map(m=>{const P=p.per[m.id];let a=P.prev||0;const v=[];
+    for(let k=0;k<nd;k++){const hr=P.hrs[k]||[],tt=P.ht[k]||[],sum=hr.reduce((s,x)=>s+(x||0),0),f=sum>0&&P.snow?.[k]!=null?P.snow[k]/sum:1;
+      for(let h=0;h<24;h++){const s=hr[h];if(s==null||P.snow?.[k]==null){v.push(null);continue}
+        a=Math.max(0,a*.99325+s*f-Math.max(0,tt[h]??0)*1.5/24);v.push(a)}}
+    const main=!p.med&&m.id===SNOW_M;return{col:m.col,vals:v,w:main?4.5:1.8,op:main?1:.55,main}}).sort((a,b)=>a.main-b.main);
+}
+function snowChart(p){const cum=state.mode[p.id]==='cum';
+  if(cum){const svg=document.getElementById('cs-'+p.id),nd=Math.min(3,p.days.length),times=[],small=svg.clientWidth<520;
+    for(let k=0;k<nd;k++)for(let h=0;h<24;h++)times.push(p.days[k].t+'T'+String(h).padStart(2,'0')+':00');
+    lineChart(svg,times,groundSeries(p,nd),{min0:true,minMax:10,unit:' cm',lab:t=>{const h=+t.slice(11,13);
+      return h===0?new Date(t.slice(0,10)+'T12:00').toLocaleDateString('it-IT',{weekday:'short'}):h%(small?12:6)===0?h+':00':null}});return}
+lineChart(document.getElementById('cs-'+p.id),p.days.map(d=>d.t),seriesFor(p,'snow',cum),{min0:true,minMax:cum?10:4,unit:' cm'})}
 function fzChart(p){lineChart(document.getElementById('cf-'+p.id),p.days.map(d=>d.t),seriesFor(p,'fz',false),{unit:' m',ref:p.alt,refLabel:p.name+' '+p.alt+' m'})}
 
 function hourChart(p){
@@ -497,10 +532,12 @@ function setupMini(p,pi){
   syncHour(p);setTimeout(()=>m.invalidateSize(),300);
 }
 function drawMini(p){
-  const M=MINI[p.id];if(!M)return;const off=state.hour[p.id]??0,t=M.start+off,key=M.times[t]||'';
+  const M=MINI[p.id];if(!M)return;const off=state.hour[p.id]??0,t=M.start+Math.floor(off),fr30=off%1,key=M.times[t]||'';
   /* Valore di mezzo (mediana) tra ICON, ICON-2I e Météo-France */
   const medAt=(o,i)=>{if(!o)return 0;const v=MAP_MODELS.map(m=>o.hourly?.['snowfall_'+m]?.[i]).filter(x=>x!=null);return v.length?median(v):0};
-  const nc=MC.length,V=MR.map((_,r)=>MC.map((_,c)=>medAt(M.pts[r*nc+c],t)));
+  /* Passi da 30 minuti: a metà tra due ore si usa la media tra l'ora prima e quella dopo */
+  const at=(o,i)=>fr30?(medAt(o,i)+medAt(o,i+1))/2:medAt(o,i);
+  const nc=MC.length,V=MR.map((_,r)=>MC.map((_,c)=>at(M.pts[r*nc+c],t)));
   let win=0;for(const o of M.pts)for(let i=M.start;i<M.start+9;i++)win=Math.max(win,medAt(o,i));
   if(M.ov)M.ov.remove();
   M.ov=L.imageOverlay(overlayURL(V,HBANDS,24),[[M.lats[0],M.lons[0]],[M.lats.at(-1),M.lons.at(-1)]],{interactive:false,className:'snowov'}).addTo(M.m);
@@ -509,8 +546,8 @@ function drawMini(p){
   const fr=(p.lat-M.lats[0])/(M.lats[1]-M.lats[0]),fc=(p.lon-M.lons[0])/(M.lons[1]-M.lons[0]);
   const r0=Math.max(0,Math.min(MR.length-2,Math.floor(fr))),c0=Math.max(0,Math.min(nc-2,Math.floor(fc))),dr=fr-r0,dc=fc-c0;
   const here=V[r0][c0]*(1-dr)*(1-dc)+V[r0][c0+1]*(1-dr)*dc+V[r0+1][c0]*dr*(1-dc)+V[r0+1][c0+1]*dr*dc;
-  const day=key.slice(0,10),hh=key.slice(11,16),today=romeHourKey().slice(0,10);
-  document.getElementById('mt-'+p.id).textContent=(off===0?'adesso, ':'tra '+off+(off===1?' ora, ':' ore, '))+(day===today?'oggi':'domani')+' alle '+hh;
+  const day=key.slice(0,10),hh=key.slice(11,13)+(fr30?':30':':00'),today=romeHourKey().slice(0,10);
+  document.getElementById('mt-'+p.id).textContent=(off===0?'adesso, ':'tra '+(off===.5?'mezz\'ora, ':Math.floor(off)+(Math.floor(off)===1?' ora':' ore')+(fr30?' e mezza, ':', ')))+(day===today?'oggi':'domani')+' alle '+hh;
   let txt;
   if(win<0.05)txt='Nelle prossime 8 ore non è prevista neve nella zona.';
   else if(mx<0.05)txt='A quest\'ora non nevica nella zona, ma nevica in altre ore delle prossime 8.';
@@ -570,7 +607,7 @@ document.addEventListener('click',e=>{
     document.getElementById('d-'+p.id).innerHTML=detail(p,p.days[i]);
     document.getElementById('hd-'+p.id).textContent=fmtLong(p.days[i].t);hourChart(p);return}
   const hp=e.target.closest('[data-hp]');
-  if(hp){const p=DATA.find(x=>x.id===hp.dataset.hp);state.hour[p.id]=Math.max(0,Math.min(6,(state.hour[p.id]??0)+ +hp.dataset.dv));syncHour(p);return}
+  if(hp){const p=DATA.find(x=>x.id===hp.dataset.hp);state.hour[p.id]=Math.max(0,Math.min(8,(state.hour[p.id]??0)+hp.dataset.dv*.5));syncHour(p);return}
   const mp=e.target.closest('[data-map]');
   if(mp){state.mapDays=+mp.dataset.map;mp.parentElement.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b===mp));state.drawMap?.();return}
   const mb=e.target.closest('[data-mode]');
@@ -584,7 +621,7 @@ document.addEventListener('click',e=>{
 
 document.addEventListener('input',e=>{const id=e.target.dataset?.hr;if(!id||!DATA)return;const p=DATA.find(x=>x.id===id);state.hour[id]=+e.target.value;drawMini(p)});
 /* Sorpresa: da telefono (senza mouse) si mostra toccando l'angolo */
-document.getElementById('egg')?.addEventListener('click',e=>e.currentTarget.classList.toggle('on'));
+document.querySelectorAll('.egg').forEach(el=>el.addEventListener('click',e=>e.currentTarget.classList.toggle('on')));
 let lastHour=camKey();
 setInterval(()=>{const h=camKey();if(h===lastHour)return;lastHour=h;
   document.querySelectorAll('img[data-cam]').forEach(im=>{im.src=camSrc(im.dataset.cam,h)});
