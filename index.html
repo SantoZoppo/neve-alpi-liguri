@@ -187,6 +187,8 @@ const fmtLong=d=>new Date(d+'T12:00').toLocaleDateString('it-IT',{weekday:'long'
 const r1=n=>(Math.round(n*10)/10).toLocaleString('it-IT');
 const median=a=>{const v=a.filter(x=>x!=null).sort((x,y)=>x-y);if(!v.length)return null;const m=v.length>>1;return v.length%2?v[m]:(v[m-1]+v[m])/2};
 const SNOW_M='icon_seamless',WX_M='ecmwf_ifs025';
+/* Quota della neve: sotto 0° tutta neve, sopra 1,5° niente, in mezzo una parte */
+const wet=T=>T==null||T<=0?1:T>=1.5?0:(1.5-T)/1.5;
 const pick=(o,k,id)=>o?.[k]??o?.[k+'_'+id]??null;
 const state={sel:{},mode:{},hidden:{},hour:{}};
 let DATA=null,OK_MODELS=[];
@@ -224,14 +226,22 @@ async function cached(key,ttl,fn){
   return v;
 }
 
+/* Toglie i giorni già passati (i dati salvati possono essere di ieri) */
+function trimPast(r){if(!r)return r;const today=new Date().toLocaleDateString('sv-SE',{timeZone:'Europe/Rome'});
+  const cut=o=>{for(const part of [o.daily,o.hourly]){if(!part?.time)continue;const keep=part.time.map(t=>t.slice(0,10)>=today);
+    if(!keep.some(Boolean))continue;for(const k in part)if(Array.isArray(part[k]))part[k]=part[k].filter((_,i)=>keep[i])}return o};
+  return Array.isArray(r)?r.map(cut):cut(r)}
 function build(results){
   OK_MODELS=MODELS.filter((m,i)=>results[i]);
   return PLACES.map((pl,pi)=>{
     const per={};
     OK_MODELS.forEach(m=>{
       const raw=results[MODELS.indexOf(m)],o=Array.isArray(raw)?raw[pi]:raw,d=o.daily,h=o.hourly,id=m.id;
-      const snow=pick(d,'snowfall_sum',id),prec=pick(d,'precipitation_sum',id),tx=pick(d,'temperature_2m_max',id),tn=pick(d,'temperature_2m_min',id);
-      const hs=pick(h,'snowfall',id)||[],hf=pick(h,'freezing_level_height',id)||[],htp=pick(h,'temperature_2m',id)||[];
+      const snow0=pick(d,'snowfall_sum',id),prec=pick(d,'precipitation_sum',id),tx=pick(d,'temperature_2m_max',id),tn=pick(d,'temperature_2m_min',id);
+      const hs0=pick(h,'snowfall',id)||[],hf=pick(h,'freezing_level_height',id)||[],htp=pick(h,'temperature_2m',id)||[];
+      /* Correzione: il modello calcola la neve sul suo terreno; se alla quota della località fa più di 0°, parte è pioggia/neve bagnata che non attacca */
+      const hs=hs0.map((v,j)=>v==null?v:v*wet(htp[j]));
+      const snow=snow0&&d.time.map((t,k)=>{if(snow0[k]==null)return null;let a=0,b=0;h.time.forEach((ht,j)=>{if(ht.startsWith(t)&&hs0[j]){a+=hs[j];b+=hs0[j]}});return b?snow0[k]*a/b:snow0[k]});
       per[id]={times:d.time,snow,prec,tx,tn,fz:d.time.map(t=>{let mn=null;h.time.forEach((ht,j)=>{if(ht.startsWith(t)&&hf[j]!=null&&(mn==null||hf[j]<mn))mn=hf[j]});return mn}),
         hrs:d.time.map(t=>{const a=[];h.time.forEach((ht,j)=>{if(ht.startsWith(t))a.push(hs[j])});return a}),
         ht:d.time.map(t=>{const a=[];h.time.forEach((ht,j)=>{if(ht.startsWith(t))a.push(htp[j]??null)});return a})};
@@ -535,7 +545,7 @@ async function load(){
       if(!v.some(Boolean))throw new Error(res[0].reason?.message||'nessuna risposta');
       return v});
   }catch(e){fail(e.message);return}
-  try{DATA=build(vals);renderSum();renderLocs()}catch(e){fail(e.message);return}
+  try{DATA=build(vals.map(trimPast));renderSum();renderLocs()}catch(e){fail(e.message);return}
   /* Mini mappe: i dati si scaricano la prima volta che se ne vede una */
   /* Mini mappe: dati nuovi da Open-Meteo, poi di nuovo ogni 10 minuti (se non arrivano, si usano quelli di GitHub) */
   const goMini=async()=>{LOCDATA=await cached('neve-locali-v5',10*60e3,()=>getJSON(locUrl())).catch(()=>LOCDATA);DATA.forEach((p,pi)=>{try{setupMini(p,pi)}catch(e){console.warn(e)}});setInterval(refreshMini,10*60e3)};
