@@ -171,7 +171,7 @@ footer a,.sources a{color:var(--snow)}
 const PLACES=[
   {id:'garessio',name:'Garessio 2000',area:'Colle di Casotto, Cuneo',lat:44.2165,lon:7.9446,alt:1381,foto:'',cam:{img:'https://webcam.torinometeo.org/api/webcams/23/last/',by:'TorinoMeteo'},zone:[[44.185,7.90],[44.245,8.04]],wiki:[['it','Garessio 2000'],['it','Colle di Casotto'],['it','Garessio']]},
   {id:'monesi',name:'Monesi',area:'Mendatica / Triora, Imperia',lat:44.0770,lon:7.7470,alt:1310,foto:'',cam:{img:'https://retelimet.centrometeoligure.it/stazioni/meteo-piaggia/data/webcam/piaggia.jpg',by:'Centro Meteo Ligure, Piaggia'},zone:[[44.04,7.72],[44.13,7.90]],wiki:[['it','Monesi di Triora'],['it','Monesi'],['it','Monesi di Mendatica'],['it','Mendatica']]},
-  {id:'oggia',name:"Colle d'Oggia",area:'Valle Argentina, Imperia',lat:43.9990,lon:7.8330,alt:1167,foto:'',cam:{href:'https://www.relivecam.it/it/foto/Italia/Liguria/Imperia/Montalto-Ligure/montalto_ligure.html',by:'Relivecam, Montalto Ligure'},zone:[[43.955,7.785],[44.035,7.905]],wiki:[['it',"Colle d'Oggia"],['it','Rezzo']]},
+  {id:'oggia',name:"Colle d'Oggia",area:'Valle Argentina, Imperia',lat:43.9990,lon:7.8330,alt:1167,foto:'',cam:{img:'https://imgproxy.windy.com/_/full/plain/current/1793902352/original.jpg?v=2',by:'Relivecam via Windy, Montalto Ligure (6 km a sud)'},zone:[[43.955,7.785],[44.035,7.905]],wiki:[['it',"Colle d'Oggia"],['it','Rezzo']]},
   {id:'turini',name:'Colle del Turini',area:'Alpi Marittime, Francia',lat:43.9775,lon:7.3914,alt:1607,foto:'',cam:{img:'https://www.inforoutes06.fr/webcam/CAM096/snap5.jpg',by:'Inforoutes 06'},zone:[[43.925,7.30],[44.01,7.47]],wiki:[['it','Colle del Turini'],['fr','Col de Turini'],['en','Col de Turini']]}
 ];
 const MODELS=[
@@ -281,18 +281,19 @@ function detail(p,x){
   return s;
 }
 
-/* Riquadro webcam: immagine aggiornata ogni ora, cliccando si apre la webcam */
+/* Riquadro webcam: immagine aggiornata ogni 30 minuti, cliccando si apre la webcam */
 function camHTML(p){
   const c=p.cam;if(!c)return'';
   if(!c.img)return`<figure class="cam"><div class="noimg"><em>Immagine in tempo reale non disponibile per ora</em>
     <a class="camlink" href="${esc(c.href)}" target="_blank" rel="noopener">Apri la webcam del ${esc(p.name)} ›</a></div>
     <figcaption>${esc(c.by)}</figcaption></figure>`;
-  const h=romeHourKey();
+  const h=camKey();
   return`<figure class="cam"><a href="${esc(c.img)}" target="_blank" rel="noopener" aria-label="Apri la webcam di ${esc(p.name)} a tutto schermo">
     <img data-cam="${esc(c.img)}" src="${esc(camSrc(c.img,h))}" alt="Webcam di ${esc(p.name)}" loading="lazy"><span>Webcam ›</span></a>
     <figcaption><span class="camtime">Immagine delle ${h.slice(11,16)}</span> · non è in tempo reale · ${esc(c.by)}</figcaption></figure>`;
 }
-/* Stessa immagine per tutta l'ora; allo scoccare dell'ora successiva si ricarica */
+/* Stessa immagine per mezz'ora; alle :00 e alle :30 si ricarica */
+function camKey(){const h=romeHourKey(),m=+new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Rome',minute:'2-digit'}).format(new Date());return h.slice(0,14)+(m<30?'00':'30')}
 function camSrc(u,h){return u+(u.includes('?')?'&':'?')+'h='+h.replace(/\D/g,'')}
 function renderLocs(){
   document.getElementById('locs').innerHTML=DATA.map(p=>{
@@ -314,9 +315,9 @@ function renderLocs(){
       <div class="inner">
         <div class="loc-h"><div><h2>${esc(p.name)}</h2><div class="meta">${esc(p.area)} · ${p.alt} m</div></div>
           <span class="tot">${r1(tot7)} cm nei prossimi 7 giorni</span></div>
-        <h4>Dove nevica di più · <span id="mt-${p.id}"></span></h4><p class="sub">Le prossime 6 ore, ora per ora: valore di mezzo tra ICON, ICON-2I e Météo-France, i modelli più dettagliati. Sposta il cursore per cambiare ora.</p>
+        <h4>Dove nevica di più · <span id="mt-${p.id}"></span></h4><p class="sub">Le prossime 8 ore, ora per ora: valore di mezzo tra ICON, ICON-2I e Météo-France, i modelli più dettagliati. Sposta il cursore per cambiare ora.</p>
         <div class="maprow"><div><div class="mm" id="mm-${p.id}"><div class="msg">Caricamento mappa…</div></div>
-        <div class="hr"><button data-hp="${p.id}" data-dv="-1" aria-label="Ora precedente">‹</button><input type="range" min="0" max="6" step="1" value="0" id="hr-${p.id}" data-hr="${p.id}" aria-label="Ore da adesso"><button data-hp="${p.id}" data-dv="1" aria-label="Ora successiva">›</button></div>
+        <div class="hr"><button data-hp="${p.id}" data-dv="-1" aria-label="Ora precedente">‹</button><input type="range" min="0" max="8" step="1" value="0" id="hr-${p.id}" data-hr="${p.id}" aria-label="Ore da adesso"><button data-hp="${p.id}" data-dv="1" aria-label="Ora successiva">›</button></div>
         <div class="scale"><span><i style="background:#ffd600"></i>Debole: 0,1–0,5 cm/h</span><span><i style="background:#ff8200"></i>Moderata: 0,5–1,5 cm/h</span><span><i style="background:#dc1e1e"></i>Forte: oltre 1,5 cm/h</span></div>
         <p class="note" id="mi-${p.id}"></p></div>
         ${camHTML(p)}</div>
@@ -483,7 +484,7 @@ function drawMini(p){
   /* Valore di mezzo (mediana) tra ICON, ICON-2I e Météo-France */
   const medAt=(o,i)=>{if(!o)return 0;const v=MAP_MODELS.map(m=>o.hourly?.['snowfall_'+m]?.[i]).filter(x=>x!=null);return v.length?median(v):0};
   const nc=MC.length,V=MR.map((_,r)=>MC.map((_,c)=>medAt(M.pts[r*nc+c],t)));
-  let win=0;for(const o of M.pts)for(let i=M.start;i<M.start+7;i++)win=Math.max(win,medAt(o,i));
+  let win=0;for(const o of M.pts)for(let i=M.start;i<M.start+9;i++)win=Math.max(win,medAt(o,i));
   if(M.ov)M.ov.remove();
   M.ov=L.imageOverlay(overlayURL(V,HBANDS,24),[[M.lats[0],M.lons[0]],[M.lats.at(-1),M.lons.at(-1)]],{interactive:false,className:'snowov'}).addTo(M.m);
   const all=V.flat(),mx=Math.max(...all);
@@ -494,12 +495,20 @@ function drawMini(p){
   const day=key.slice(0,10),hh=key.slice(11,16),today=romeHourKey().slice(0,10);
   document.getElementById('mt-'+p.id).textContent=(off===0?'adesso, ':'tra '+off+(off===1?' ora, ':' ore, '))+(day===today?'oggi':'domani')+' alle '+hh;
   let txt;
-  if(win<0.05)txt='Nelle prossime 6 ore non è prevista neve nella zona.';
-  else if(mx<0.05)txt='A quest\'ora non nevica nella zona, ma nevica in altre ore delle prossime 6.';
+  if(win<0.05)txt='Nelle prossime 8 ore non è prevista neve nella zona.';
+  else if(mx<0.05)txt='A quest\'ora non nevica nella zona, ma nevica in altre ore delle prossime 8.';
   else{const at=all.indexOf(mx),dN=(M.lats[Math.floor(at/nc)]-p.lat)*111,dE=(M.lons[at%nc]-p.lon)*111*Math.cos(p.lat*Math.PI/180);
     const ns=dN>2?'nord':dN<-2?'sud':'',ew=dE>2?'est':dE<-2?'ovest':'',dir=ns&&ew?ns+'-'+ew:ns||ew,km=Math.round(Math.hypot(dN,dE));
     txt=`Qui ${r1(here)} cm/h. Il punto con più neve fa ${r1(mx)} cm/h`+(!dir?', vicino alla località.':` ed è circa ${km} km a ${dir} della località.`)}
   document.getElementById('mi-'+p.id).textContent=txt;
+}
+
+/* Aggiorna le mini mappe senza ricaricare la pagina: nuovi dati e ora di partenza = ora attuale */
+async function refreshMini(){
+  const d=await cached('neve-locali-v5',10*60e3,()=>getJSON(locUrl())).catch(()=>null);if(!d||!DATA)return;LOCDATA=d;
+  const arr=Array.isArray(d)?d:[d];
+  DATA.forEach((p,pi)=>{const M=MINI[p.id];if(!M)return;M.pts=arr.slice(pi*NP,pi*NP+NP);M.times=M.pts[0]?.hourly?.time||[];
+    const s=M.times.indexOf(romeHourKey());M.start=s<0?0:s;try{drawMini(p)}catch(e){console.warn(e)}});
 }
 
 /* Dati già pronti, scaricati ogni 2 ore da GitHub (scripts/aggiorna.mjs). Se mancano o sono vecchi, la pagina li scarica da sola. */
@@ -528,7 +537,8 @@ async function load(){
   }catch(e){fail(e.message);return}
   try{DATA=build(vals);renderSum();renderLocs()}catch(e){fail(e.message);return}
   /* Mini mappe: i dati si scaricano la prima volta che se ne vede una */
-  const goMini=async()=>{LOCDATA=LOCDATA||await cached('neve-locali-v4',60*60e3,()=>getJSON(locUrl())).catch(()=>null);DATA.forEach((p,pi)=>{try{setupMini(p,pi)}catch(e){console.warn(e)}})};
+  /* Mini mappe: dati nuovi da Open-Meteo, poi di nuovo ogni 10 minuti (se non arrivano, si usano quelli di GitHub) */
+  const goMini=async()=>{LOCDATA=await cached('neve-locali-v5',10*60e3,()=>getJSON(locUrl())).catch(()=>LOCDATA);DATA.forEach((p,pi)=>{try{setupMini(p,pi)}catch(e){console.warn(e)}});setInterval(refreshMini,10*60e3)};
   const minis=[...document.querySelectorAll('.mm')];
   if('IntersectionObserver' in window){const io2=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io2.disconnect();goMini()}},{rootMargin:'300px'});minis.forEach(el=>io2.observe(el))}else goMini();
 }
@@ -558,8 +568,8 @@ document.addEventListener('click',e=>{
 document.addEventListener('input',e=>{const id=e.target.dataset?.hr;if(!id||!DATA)return;const p=DATA.find(x=>x.id===id);state.hour[id]=+e.target.value;drawMini(p)});
 /* Sorpresa: da telefono (senza mouse) si mostra toccando l'angolo */
 document.getElementById('egg')?.addEventListener('click',e=>e.currentTarget.classList.toggle('on'));
-let lastHour=romeHourKey();
-setInterval(()=>{const h=romeHourKey();if(h===lastHour)return;lastHour=h;
+let lastHour=camKey();
+setInterval(()=>{const h=camKey();if(h===lastHour)return;lastHour=h;
   document.querySelectorAll('img[data-cam]').forEach(im=>{im.src=camSrc(im.dataset.cam,h)});
   document.querySelectorAll('.camtime').forEach(el=>{el.textContent='Immagine delle '+h.slice(11,16)})},60000);
 load();
