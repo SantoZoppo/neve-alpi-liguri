@@ -359,9 +359,9 @@ function renderLocs(){
         <div class="charts">
           <div><h4>Neve secondo ogni modello</h4>
             <div class="tg"><button data-mode="${p.id}" data-v="day" aria-pressed="${state.mode[p.id]==='day'}">Neve fresca totale</button><button data-mode="${p.id}" data-v="cum" aria-pressed="${state.mode[p.id]==='cum'}">Stima al suolo</button></div>
-            <div class="hr"><button data-wp="${p.id}" data-dv="-1" aria-label="6 ore prima">‹</button><input type="range" min="0" max="${Math.max(0,p.days.length*24-72)}" step="6" value="0" id="win-${p.id}" data-win="${p.id}" aria-label="Sposta i giorni del grafico"><button data-wp="${p.id}" data-dv="1" aria-label="6 ore dopo">›</button></div>
             <p class="sub">7 giorni ora per ora, 3 alla volta: sposta il cursore per andare avanti e indietro. "Neve fresca totale": neve di ieri più quella prevista, sommata ora per ora senza togliere niente. "Stima al suolo": la stessa neve, che si assesta e si scioglie quando fa sopra zero. Stima indicativa.</p>
             <div class="fig"><svg id="cs-${p.id}" role="img" aria-label="Neve prevista da ogni modello a ${esc(p.name)}"></svg></div>
+            <div class="hr"><button data-wp="${p.id}" data-dv="-1" aria-label="6 ore prima">‹</button><input type="range" min="0" max="${Math.max(0,p.days.length*24-72)}" step="6" value="0" id="win-${p.id}" data-win="${p.id}" aria-label="Sposta i giorni del grafico"><button data-wp="${p.id}" data-dv="1" aria-label="6 ore dopo">›</button></div>
             <div class="keys">${keys}</div></div>
           <div><h4>Zero termico e quota della località</h4><p class="sub">Sotto la linea tratteggiata le precipitazioni cadono come neve.</p>
             <div class="fig"><svg id="cf-${p.id}" role="img" aria-label="Zero termico previsto a ${esc(p.name)}"></svg></div>
