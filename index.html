@@ -188,10 +188,10 @@ footer a,.sources a{color:var(--snow)}
 {
 /* Per usare una tua foto, metti l'indirizzo dell'immagine in "foto". */
 const PLACES=[
-  {id:'garessio',name:'Garessio 2000',area:'Colle di Casotto, Cuneo',lat:44.2165,lon:7.9446,alt:1381,foto:'',cam:{img:'https://webcam.torinometeo.org/api/webcams/23/last/',by:'TorinoMeteo'},zone:[[44.185,7.90],[44.245,8.04]],wiki:[['it','Garessio 2000'],['it','Colle di Casotto'],['it','Garessio']]},
-  {id:'monesi',name:'Monesi',area:'Mendatica / Triora, Imperia',lat:44.0770,lon:7.7470,alt:1310,foto:'',cam:{img:'https://retelimet.centrometeoligure.it/stazioni/meteo-piaggia/data/webcam/piaggia.jpg',by:'Centro Meteo Ligure, Piaggia'},zone:[[44.04,7.72],[44.13,7.90]],wiki:[['it','Monesi di Triora'],['it','Monesi'],['it','Monesi di Mendatica'],['it','Mendatica']]},
-  {id:'oggia',name:"Colle d'Oggia",area:'Valle Argentina, Imperia',lat:43.9990,lon:7.8330,alt:1167,foto:'',cam:{img:'https://imgproxy.windy.com/_/full/plain/current/1793902352/original.jpg?v=2',by:'Relivecam via Windy, Montalto Ligure (6 km a sud)'},zone:[[43.955,7.785],[44.035,7.905]],wiki:[['it',"Colle d'Oggia"],['it','Rezzo']]},
-  {id:'turini',med:true,name:'Colle del Turini',area:'Alpi Marittime, Francia',lat:43.9775,lon:7.3914,alt:1607,foto:'',cam:{img:'https://www.inforoutes06.fr/webcam/CAM096/snap5.jpg',by:'Inforoutes 06'},zone:[[43.925,7.30],[44.01,7.47]],wiki:[['it','Colle del Turini'],['fr','Col de Turini'],['en','Col de Turini']]}
+  {id:'garessio',name:'Garessio 2000',area:'Colle di Casotto, Cuneo',lat:44.2165,lon:7.9446,alt:1381,foto:'',cam:{img:'https://webcam.torinometeo.org/api/webcams/23/last/',by:'TorinoMeteo',pos:[44.2404,7.9049],dir:150,fov:90},zone:[[44.185,7.90],[44.245,8.04]],wiki:[['it','Garessio 2000'],['it','Colle di Casotto'],['it','Garessio']]},
+  {id:'monesi',name:'Monesi',area:'Mendatica / Triora, Imperia',lat:44.0770,lon:7.7470,alt:1310,foto:'',cam:{img:'https://retelimet.centrometeoligure.it/stazioni/meteo-piaggia/data/webcam/piaggia.jpg',by:'Centro Meteo Ligure, Piaggia',pos:[44.0825,7.7494]},zone:[[44.04,7.72],[44.13,7.90]],wiki:[['it','Monesi di Triora'],['it','Monesi'],['it','Monesi di Mendatica'],['it','Mendatica']]},
+  {id:'oggia',name:"Colle d'Oggia",area:'Valle Argentina, Imperia',lat:43.9990,lon:7.8330,alt:1167,foto:'',cam:{img:'https://imgproxy.windy.com/_/full/plain/current/1793902352/original.jpg?v=2',by:'Relivecam via Windy, Montalto Ligure (6 km a sud)',pos:[43.946,7.850],dir:180,fov:70},zone:[[43.94,7.785],[44.035,7.905]],wiki:[['it',"Colle d'Oggia"],['it','Rezzo']]},
+  {id:'turini',med:true,name:'Colle del Turini',area:'Alpi Marittime, Francia',lat:43.9775,lon:7.3914,alt:1607,foto:'',cam:{img:'https://www.inforoutes06.fr/webcam/CAM096/snap5.jpg',by:'Inforoutes 06',pos:[43.9775,7.3914]},zone:[[43.925,7.30],[44.01,7.47]],wiki:[['it','Colle del Turini'],['fr','Col de Turini'],['en','Col de Turini']]}
 ];
 const MODELS=[
   {id:'ecmwf_ifs025',name:'ECMWF',who:'Centro europeo',col:'#1f6fd1'},
@@ -345,7 +345,7 @@ function renderLocs(){
       <div class="inner">
         <div class="loc-h"><div><h2>${esc(p.name)}</h2><div class="meta">${esc(p.area)} · ${p.alt} m</div></div>
           <span class="tot">${r1(tot7)} cm nei prossimi 7 giorni</span></div>
-        <h4>Dove nevica di più · <span id="mt-${p.id}"></span></h4><p class="sub">Le prossime 8 ore, ora per ora: valore di mezzo tra ICON, ICON-2I e Météo-France, i modelli più dettagliati. Sposta il cursore per cambiare ora.</p>
+        <h4>Dove nevica di più · <span id="mt-${p.id}"></span></h4><p class="sub">Le prossime 8 ore, ora per ora: valore di mezzo tra ICON, ICON-2I e Météo-France, i modelli più dettagliati. Sposta il cursore per cambiare ora. Punto arancio: la webcam, con il cono di quello che inquadra.</p>
         <div class="maprow"><div><div class="mm" id="mm-${p.id}"><div class="msg">Caricamento mappa…</div></div>
         <div class="hr"><button data-hp="${p.id}" data-dv="-1" aria-label="Mezz'ora prima">‹</button><input type="range" min="0" max="8" step="0.5" value="0" id="hr-${p.id}" data-hr="${p.id}" aria-label="Ore da adesso"><button data-hp="${p.id}" data-dv="1" aria-label="Mezz'ora dopo">›</button></div>
         <div class="scale"><span><i style="background:#ffd600"></i>Debole: 0,1–0,5 cm/h</span><span><i style="background:#ff8200"></i>Moderata: 0,5–1,5 cm/h</span><span><i style="background:#dc1e1e"></i>Forte: oltre 1,5 cm/h</span></div>
@@ -358,8 +358,9 @@ function renderLocs(){
         <div class="detail" id="d-${p.id}">${detail(p,p.days[sel])}</div>
         <div class="charts">
           <div><h4>Neve secondo ogni modello</h4>
-            <div class="tg"><button data-mode="${p.id}" data-v="day" aria-pressed="${state.mode[p.id]==='day'}">Al giorno</button><button data-mode="${p.id}" data-v="cum" aria-pressed="${state.mode[p.id]==='cum'}">Stima al suolo</button></div>
-            <p class="sub">"Stima al suolo": prossimi 3 giorni, ora per ora. Neve caduta ieri più quella prevista, che si assesta e si scioglie quando fa sopra zero. Stima indicativa.</p>
+            <div class="tg"><button data-mode="${p.id}" data-v="day" aria-pressed="${state.mode[p.id]==='day'}">Neve fresca totale</button><button data-mode="${p.id}" data-v="cum" aria-pressed="${state.mode[p.id]==='cum'}">Stima al suolo</button></div>
+            <div class="hr"><button data-wp="${p.id}" data-dv="-1" aria-label="6 ore prima">‹</button><input type="range" min="0" max="${Math.max(0,p.days.length*24-72)}" step="6" value="0" id="win-${p.id}" data-win="${p.id}" aria-label="Sposta i giorni del grafico"><button data-wp="${p.id}" data-dv="1" aria-label="6 ore dopo">›</button></div>
+            <p class="sub">7 giorni ora per ora, 3 alla volta: sposta il cursore per andare avanti e indietro. "Neve fresca totale": neve di ieri più quella prevista, sommata ora per ora senza togliere niente. "Stima al suolo": la stessa neve, che si assesta e si scioglie quando fa sopra zero. Stima indicativa.</p>
             <div class="fig"><svg id="cs-${p.id}" role="img" aria-label="Neve prevista da ogni modello a ${esc(p.name)}"></svg></div>
             <div class="keys">${keys}</div></div>
           <div><h4>Zero termico e quota della località</h4><p class="sub">Sotto la linea tratteggiata le precipitazioni cadono come neve.</p>
@@ -378,7 +379,7 @@ const ro=new ResizeObserver(es=>es.forEach(e=>drawers.get(e.target.id)?.()));
 
 function lineChart(svg,times,series,opt){
   const W=svg.clientWidth,H=svg.clientHeight;if(!W||!H)return;
-  const L=44,R=10,T=12,B=26,n=times.length,small=W<520;
+  const L=44,R=10,T=12,B=opt.day?42:26,n=times.length,small=W<520;
   const all=series.flatMap(s=>s.vals).filter(v=>v!=null).concat(opt.ref!=null?[opt.ref]:[]);
   let lo=opt.min0?0:Math.min(...all),hi=Math.max(opt.minMax||0,...all);
   if(!opt.min0){const pad=(hi-lo)*.08||100;lo-=pad;hi+=pad}
@@ -389,9 +390,11 @@ function lineChart(svg,times,series,opt){
   let g='';
   for(let k=0;k<=G;k++){const v=lo+st*k,yy=y(v);g+=`<line x1="${L}" x2="${W-R}" y1="${yy}" y2="${yy}" stroke="var(--line)"/><text x="${L-6}" y="${yy+4}" text-anchor="end">${r1(v)}${k===G?opt.unit:''}</text>`}
   const step=small?2:1;
-  times.forEach((t,i)=>{const lb=opt.lab?opt.lab(t,i):i%step===0?(small?new Date(t+'T12:00').getDate():fmtDate(t)):null;if(lb==null)return;
-    if(opt.lab&&t.endsWith('T00:00')&&i>0)g+=`<line x1="${x(i)}" x2="${x(i)}" y1="${T}" y2="${H-B}" stroke="var(--line)" stroke-dasharray="3 4"/>`;
-    g+=`<text x="${x(i)}" y="${H-6}" text-anchor="middle"${opt.lab&&t.endsWith('T00:00')?' font-weight="700"':''}>${esc(String(lb))}</text>`});
+  times.forEach((t,i)=>{const lb=opt.lab?opt.lab(t,i):i%step===0?(small?new Date(t+'T12:00').getDate():fmtDate(t)):null;
+    /* Grafici ora per ora: linea tratteggiata a mezzanotte, ore sotto e giorno della settimana sotto le ore */
+    if(opt.day&&t.endsWith('T00:00')&&i>0)g+=`<line x1="${x(i)}" x2="${x(i)}" y1="${T}" y2="${H-B}" stroke="var(--line)" stroke-dasharray="3 4"/>`;
+    if(opt.day&&t.endsWith('T12:00'))g+=`<text x="${x(i)}" y="${H-5}" text-anchor="middle" font-weight="700">${esc(opt.day(t))}</text>`;
+    if(lb!=null)g+=`<text x="${x(i)}" y="${opt.day?H-B+16:H-6}" text-anchor="middle">${esc(String(lb))}</text>`});
   if(opt.ref!=null)g+=`<line x1="${L}" x2="${W-R}" y1="${y(opt.ref)}" y2="${y(opt.ref)}" stroke="var(--acc)" stroke-width="2" stroke-dasharray="6 5"/><text x="${W-R}" y="${y(opt.ref)-6}" text-anchor="end" style="fill:var(--acc)">${esc(opt.refLabel)}</text>`;
   series.forEach(s=>{
     let d='',pen=false;s.vals.forEach((v,i)=>{if(v==null){pen=false;return}d+=(pen?'L':'M')+x(i).toFixed(1)+' '+y(v).toFixed(1);pen=true});
@@ -412,19 +415,24 @@ function seriesFor(p,key,cum){
   return out.sort((a,b)=>a.main-b.main);
 }
 /* Stima al suolo ora per ora sui prossimi 3 giorni, per ogni modello */
-function groundSeries(p,nd){
+/* Neve dei prossimi 3 giorni ora per ora, per ogni modello.
+   raw=true: neve fresca totale (somma, senza togliere niente); altrimenti stima al suolo (assestamento e scioglimento) */
+function groundSeries(p,nd,raw){
   return OK_MODELS.filter(m=>!state.hidden[p.id][m.id]).map(m=>{const P=p.per[m.id];let a=P.prev||0;const v=[];
     for(let k=0;k<nd;k++){const hr=P.hrs[k]||[],tt=P.ht[k]||[],sum=hr.reduce((s,x)=>s+(x||0),0),f=sum>0&&P.snow?.[k]!=null?P.snow[k]/sum:1;
       for(let h=0;h<24;h++){const s=hr[h];if(s==null||P.snow?.[k]==null){v.push(null);continue}
+        if(raw){a+=s*f;v.push(a);continue}
         a=Math.max(0,a*.99325+s*f-Math.max(0,tt[h]??0)*1.5/24);v.push(a)}}
     const main=!p.med&&m.id===SNOW_M;return{col:m.col,vals:v,w:main?4.5:1.8,op:main?1:.55,main}}).sort((a,b)=>a.main-b.main);
 }
-function snowChart(p){const cum=state.mode[p.id]==='cum';
-  if(cum){const svg=document.getElementById('cs-'+p.id),nd=Math.min(3,p.days.length),times=[],small=svg.clientWidth<520;
-    for(let k=0;k<nd;k++)for(let h=0;h<24;h++)times.push(p.days[k].t+'T'+String(h).padStart(2,'0')+':00');
-    lineChart(svg,times,groundSeries(p,nd),{min0:true,minMax:10,unit:' cm',lab:t=>{const h=+t.slice(11,13);
-      return h===0?new Date(t.slice(0,10)+'T12:00').toLocaleDateString('it-IT',{weekday:'short'}):h%(small?12:6)===0?h+':00':null}});return}
-lineChart(document.getElementById('cs-'+p.id),p.days.map(d=>d.t),seriesFor(p,'snow',cum),{min0:true,minMax:cum?10:4,unit:' cm'})}
+/* Tutti i 7 giorni ora per ora; se ne vedono 3 (72 ore) alla volta, spostabili col cursore */
+function snowChart(p){const cum=state.mode[p.id]==='cum',svg=document.getElementById('cs-'+p.id),nd=p.days.length,times=[],small=svg.clientWidth<520;
+  for(let k=0;k<nd;k++)for(let h=0;h<24;h++)times.push(p.days[k].t+'T'+String(h).padStart(2,'0')+':00');
+  /* Ore scritte: 6, 12, 18 e 24 (mezzanotte); sul telefono 12 e 24 */
+  const lab=(t,i)=>{const h=+t.slice(11,13);return h===0?(i===0?'0':'24'):(small?h===12:[6,12,18].includes(h))?String(h):null};
+  const day=t=>new Date(t.slice(0,10)+'T12:00').toLocaleDateString('it-IT',{weekday:'short'});
+  const off=Math.max(0,Math.min(times.length-72,state.win?.[p.id]||0)),cut=a=>a.slice(off,off+72);
+  lineChart(svg,cut(times),groundSeries(p,nd,!cum).map(s=>({...s,vals:cut(s.vals)})),{min0:true,minMax:10,unit:' cm',lab,day})}
 function fzChart(p){lineChart(document.getElementById('cf-'+p.id),p.days.map(d=>d.t),seriesFor(p,'fz',false),{unit:' m',ref:p.alt,refLabel:p.name+' '+p.alt+' m'})}
 
 function hourChart(p){
@@ -525,6 +533,11 @@ function setupMini(p,pi){
   /* Inquadra la zona scelta (come nelle immagini di riferimento) */
   const fit=()=>m.fitBounds(p.zone,{animate:false,padding:[4,4]});fit();m.on('resize',fit);
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:17,attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(m);
+  /* Webcam: punto arancio e, se si sa, il cono di quello che inquadra (3 km) */
+  const c=p.cam;if(c?.pos){const [cla,clo]=c.pos;
+    if(c.dir!=null){const arc=[];for(let a=c.dir-c.fov/2;a<=c.dir+c.fov/2+.1;a+=5){const r=a*Math.PI/180;arc.push([cla+3/111*Math.cos(r),clo+3/(111*Math.cos(cla*Math.PI/180))*Math.sin(r)])}
+      L.polygon([[cla,clo],...arc],{color:'#ff7a1a',weight:1,fillColor:'#ff7a1a',fillOpacity:.22,interactive:false}).addTo(m)}
+    L.circleMarker([cla,clo],{radius:5,color:'#1a0d00',weight:2,fillColor:'#ff7a1a',fillOpacity:1}).bindTooltip('Webcam'+(c.dir==null?' (direzione non nota)':''),{direction:'bottom',offset:[0,6]}).addTo(m)}
   L.circleMarker([p.lat,p.lon],{radius:6,color:'#1a0d00',weight:2,fillColor:'#1f6fd1',fillOpacity:1}).bindTooltip(p.name,{permanent:true,direction:'top',offset:[0,-6]}).addTo(m);
   const now=romeHourKey(),times=pts[0]?.hourly?.time||[];let start=times.indexOf(now);if(start<0)start=0;
   MINI[p.id]={m,pts,lats,lons,ov:null,start,times};
@@ -559,7 +572,7 @@ function drawMini(p){
 
 /* Aggiorna le mini mappe senza ricaricare la pagina: nuovi dati e ora di partenza = ora attuale */
 async function refreshMini(){
-  const d=await cached('neve-locali-v5',10*60e3,()=>getJSON(locUrl())).catch(()=>null);if(!d||!DATA)return;LOCDATA=d;
+  const d=await cached('neve-locali-v6',10*60e3,()=>getJSON(locUrl())).catch(()=>null);if(!d||!DATA)return;LOCDATA=d;
   const arr=Array.isArray(d)?d:[d];
   DATA.forEach((p,pi)=>{const M=MINI[p.id];if(!M)return;M.pts=arr.slice(pi*NP,pi*NP+NP);M.times=M.pts[0]?.hourly?.time||[];
     const s=M.times.indexOf(romeHourKey());M.start=s<0?0:s;try{drawMini(p)}catch(e){console.warn(e)}});
@@ -592,7 +605,7 @@ async function load(){
   try{DATA=build(vals.map(trimPast));renderSum();renderLocs()}catch(e){fail(e.message);return}
   /* Mini mappe: i dati si scaricano la prima volta che se ne vede una */
   /* Mini mappe: dati nuovi da Open-Meteo, poi di nuovo ogni 10 minuti (se non arrivano, si usano quelli di GitHub) */
-  const goMini=async()=>{LOCDATA=await cached('neve-locali-v5',10*60e3,()=>getJSON(locUrl())).catch(()=>LOCDATA);DATA.forEach((p,pi)=>{try{setupMini(p,pi)}catch(e){console.warn(e)}});setInterval(refreshMini,10*60e3)};
+  const goMini=async()=>{LOCDATA=await cached('neve-locali-v6',10*60e3,()=>getJSON(locUrl())).catch(()=>LOCDATA);DATA.forEach((p,pi)=>{try{setupMini(p,pi)}catch(e){console.warn(e)}});setInterval(refreshMini,10*60e3)};
   const minis=[...document.querySelectorAll('.mm')];
   if('IntersectionObserver' in window){const io2=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io2.disconnect();goMini()}},{rootMargin:'300px'});minis.forEach(el=>io2.observe(el))}else goMini();
 }
@@ -606,6 +619,8 @@ document.addEventListener('click',e=>{
     d.parentElement.querySelectorAll('.day').forEach(b=>b.setAttribute('aria-pressed',b===d));
     document.getElementById('d-'+p.id).innerHTML=detail(p,p.days[i]);
     document.getElementById('hd-'+p.id).textContent=fmtLong(p.days[i].t);hourChart(p);return}
+  const wp=e.target.closest('[data-wp]');
+  if(wp){const p=DATA.find(x=>x.id===wp.dataset.wp),el=document.getElementById('win-'+p.id);state.win??={};state.win[p.id]=Math.max(0,Math.min(+el.max,(state.win[p.id]||0)+wp.dataset.dv*6));el.value=state.win[p.id];snowChart(p);return}
   const hp=e.target.closest('[data-hp]');
   if(hp){const p=DATA.find(x=>x.id===hp.dataset.hp);state.hour[p.id]=Math.max(0,Math.min(8,(state.hour[p.id]??0)+hp.dataset.dv*.5));syncHour(p);return}
   const mp=e.target.closest('[data-map]');
@@ -619,7 +634,8 @@ document.addEventListener('click',e=>{
     snowChart(p);fzChart(p)}
 });
 
-document.addEventListener('input',e=>{const id=e.target.dataset?.hr;if(!id||!DATA)return;const p=DATA.find(x=>x.id===id);state.hour[id]=+e.target.value;drawMini(p)});
+document.addEventListener('input',e=>{const w=e.target.dataset?.win;if(w&&DATA){state.win??={};state.win[w]=+e.target.value;snowChart(DATA.find(x=>x.id===w));return}
+  const id=e.target.dataset?.hr;if(!id||!DATA)return;const p=DATA.find(x=>x.id===id);state.hour[id]=+e.target.value;drawMini(p)});
 /* Sorpresa: da telefono (senza mouse) si mostra toccando l'angolo */
 document.querySelectorAll('.egg').forEach(el=>el.addEventListener('click',e=>e.currentTarget.classList.toggle('on')));
 let lastHour=camKey();

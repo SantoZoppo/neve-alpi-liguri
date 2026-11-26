@@ -6,7 +6,7 @@ import { writeFile, mkdir } from 'node:fs/promises';
 const PLACES = [
   { id: 'garessio', lat: 44.2165, lon: 7.9446, alt: 1381, zone: [[44.185, 7.90], [44.245, 8.04]] },
   { id: 'monesi',   lat: 44.0770, lon: 7.7470, alt: 1310, zone: [[44.04, 7.72], [44.13, 7.90]] },
-  { id: 'oggia',    lat: 43.9990, lon: 7.8330, alt: 1167, zone: [[43.955, 7.785], [44.035, 7.905]] },
+  { id: 'oggia',    lat: 43.9990, lon: 7.8330, alt: 1167, zone: [[43.94, 7.785], [44.035, 7.905]] },
   { id: 'turini',   lat: 43.9775, lon: 7.3914, alt: 1607, zone: [[43.925, 7.30], [44.01, 7.47]] },
 ];
 // Stesso ordine di MODELS in index.html
