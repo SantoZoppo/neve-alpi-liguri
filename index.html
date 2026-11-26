@@ -1,100 +1,649 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="it">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Neve e onde in Liguria</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neve Alpi Liguri</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&family=Archivo+Narrow:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <style>
-/* VOICE everyday: scelta rapida tra montagna e mare
-   IDEA il cartello al bivio: a sinistra gli impianti, a destra la spiaggia
-   PICTURE due metà di schermo, cresta innevata e mare; al passaggio del mouse nevica o si alza l'onda
-   COLOUR blu ghiaccio #0f2f57 per la montagna, blu petrolio #0a4d68 per il mare, arancio segnaletica #ff7a1a
-   TYPE Archivo 800 + Archivo, Archivo Narrow per i numeri (come il sito neve)
-   LAYOUT laptop: due colonne a tutta altezza; telefono: una sopra l'altra */
-:root{color-scheme:dark;--acc:#ff7a1a}
+/* VOICE: bollettino di montagna, chiaro e pratico, per chi decide se salire
+   IDEA: la tabella neve affissa alla cassa degli impianti, una scheda per stazione
+   PICTURE: foto della località in testa a ogni scheda, poi barre neve e grafici di confronto tra modelli
+   COLOUR and TYPE: blu ghiaccio profondo, bianco neve, accento arancio segnaletica; Archivo + Archivo Narrow per i numeri
+   LAYOUT: testata con cresta, riepilogo in 4 colonne, poi una scheda per località */
+:root{color-scheme:light dark;
+--bg:light-dark(#f4f8fc,#0b1726);--card:light-dark(#ffffff,#122338);--ink:light-dark(#0b1d33,#eaf2fb);
+--mute:light-dark(#53667d,#9fb3c9);--line:light-dark(#d6e2ee,#24384f);--snow:light-dark(#1f6fd1,#7fc0ff);
+--snowlite:light-dark(#b9d6f5,#2f5a86);--rain:light-dark(#9aa9b9,#4d6178);--acc:#ff7a1a;--sky1:#0f2f57;--sky2:#2a5f96}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
 *{box-sizing:border-box;min-width:0}
-html,body{height:100%}
-body{margin:0;background:#0b1726;color:#fff;font:16px/1.5 Archivo,system-ui,sans-serif;overflow-x:clip}
-.tag{position:fixed;top:calc(10px + env(safe-area-inset-top,0px));left:max(10px,env(safe-area-inset-left,0px));background:var(--acc);color:#fff;font:700 13px Archivo;padding:4px 10px;border-radius:6px;z-index:9}
-.title{position:absolute;top:calc(26px + env(safe-area-inset-top,0px));left:0;right:0;text-align:center;font:800 clamp(22px,3vw,32px)/1.1 Archivo;letter-spacing:-.02em;z-index:5;pointer-events:none;padding:0 16px}
-.split{position:relative;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);min-height:100%}
-.side{position:relative;display:flex;flex-direction:column;justify-content:flex-end;padding:120px max(5vw,20px) 56px;overflow:hidden;color:#fff;text-decoration:none;min-height:560px;transition:flex .4s}
-.m{background:linear-gradient(180deg,#0f2f57,#2a5f96)}
-.s{background:linear-gradient(180deg,#0a4d68,#1592a8)}
-.scene{position:absolute;left:0;right:0;top:10%;height:40%;width:100%}
-.side>*:not(.scene):not(.fx){position:relative;z-index:2}
-.side h2{font:800 clamp(48px,6vw,72px)/1 Archivo;letter-spacing:-.02em;margin:0 0 10px}
-.side p{margin:0 0 20px;max-width:36ch;color:#e3f0fb}
-.pill{align-self:flex-start;background:#ffffff22;border:1px solid #ffffff55;border-radius:10px;padding:8px 14px;margin-bottom:18px;font:600 15px Archivo}
-.btn{align-self:flex-start;background:var(--acc);color:#fff;font:700 18px Archivo;padding:12px 22px;border-radius:10px;transition:transform .2s}
-.side:hover .btn,.side:focus-visible .btn{transform:translateX(6px)}
-.side:focus-visible{outline:4px solid var(--acc);outline-offset:-4px}
-.sig{position:absolute;bottom:calc(10px + env(safe-area-inset-bottom,0px));left:0;right:0;text-align:center;color:#ffffffaa;font:13px Archivo;z-index:5;pointer-events:none}
-/* neve */
-.fx{position:absolute;inset:0;pointer-events:none;z-index:1;opacity:0;transition:opacity .6s}
-.fl{position:absolute;top:-12px;border-radius:50%;background:#fff;animation:fall linear infinite;animation-play-state:paused}
-@keyframes fall{to{transform:translate3d(var(--dx),110vh,0)}}
-.m:hover .fx,.m:focus-visible .fx,.m.on .fx{opacity:1}
-.m:hover .fl,.m:focus-visible .fl,.m.on .fl{animation-play-state:running}
-/* onde */
-.w1,.w2{animation:slide 7s linear infinite;animation-play-state:paused}
-.w2{animation-duration:4.5s}
-@keyframes slide{to{transform:translateX(-300px)}}
-.curl{transform-origin:50% 100%;transform:translateY(60px) scaleY(.2);transition:transform 1s cubic-bezier(.3,1.4,.5,1)}
-.foam circle{opacity:0;transition:opacity .8s .5s}
-.s:hover .w1,.s:hover .w2,.s:focus-visible .w1,.s:focus-visible .w2,.s.on .w1,.s.on .w2{animation-play-state:running}
-.s:hover .curl,.s:focus-visible .curl,.s.on .curl{transform:none}
-.s:hover .foam circle,.s:focus-visible .foam circle,.s.on .foam circle{opacity:1}
-@media(max-width:700px){.split{grid-template-columns:minmax(0,1fr)}.side{min-height:50svh;padding-top:90px;padding-bottom:40px}.s{padding-bottom:56px}.scene{top:14%;height:40%}.title{position:absolute}}
-@media(prefers-reduced-motion:reduce){.fl,.w1,.w2{animation:none}.curl{transition:none}}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Archivo,system-ui,sans-serif;overflow-x:clip}
+.band{padding:clamp(24px,4vw,56px) max(5vw,16px)}
+.wrap{max-width:1240px;margin:0 auto}
+header{background:linear-gradient(180deg,var(--sky1),var(--sky2));color:#fff;position:relative;overflow:hidden}
+header .wrap{position:relative;z-index:1;padding-bottom:clamp(90px,14vw,170px)}
+h1{font-size:clamp(32px,5vw,52px);line-height:1.05;margin:0 0 8px;text-wrap:balance;font-weight:800}
+header p{margin:0;max-width:62ch;color:#d8e7f7}
+.ridge{position:absolute;left:0;right:0;bottom:0;width:100%;height:clamp(110px,16vw,200px)}
+.sum{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:-56px;position:relative;z-index:2}
+.s{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 8px 24px #0b1d3322;cursor:pointer;text-align:left;font:inherit;color:inherit}
+.s:focus-visible,.day:focus-visible,button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.s h3{margin:0;font-size:17px}.s .alt{color:var(--mute);font-size:13px}
+.s .big{font:700 clamp(26px,3.4vw,36px)/1.1 'Archivo Narrow',sans-serif;margin:10px 0 2px;color:var(--snow);white-space:nowrap}
+.s .big.none{color:var(--mute);font-size:22px}
+.s .when{font-size:14px}
+.loc{margin-top:28px;background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.photo{position:relative;height:clamp(180px,28vw,320px);background:linear-gradient(180deg,var(--sky1),var(--sky2));overflow:hidden}
+.photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .6s}
+.photo img.on{opacity:1}
+.photo svg{position:absolute;inset:auto 0 0 0;width:100%;height:60%}
+.photo .cap{position:absolute;left:0;right:0;bottom:0;padding:48px clamp(16px,2.5vw,28px) 16px;background:linear-gradient(180deg,transparent,#06101dcc);color:#fff;display:flex;flex-wrap:wrap;gap:6px 18px;align-items:end;justify-content:space-between}
+.photo h2{margin:0;font-size:clamp(26px,3.4vw,40px);line-height:1.05}
+.photo .meta{color:#dbe8f5;font-size:14px}
+.photo .credit{position:absolute;top:8px;right:10px;font-size:13px;color:#fff;background:#06101d99;padding:2px 8px;border-radius:6px;text-decoration:none}
+.photo .tot{font:700 17px 'Archivo Narrow',sans-serif;white-space:nowrap;background:#ffffffe6;color:#0b1d33;padding:4px 10px;border-radius:8px}
+.inner{padding:clamp(16px,2.5vw,28px)}
+h4{margin:22px 0 4px;font-size:17px}
+.sub{color:var(--mute);font-size:14px;margin:0 0 6px}
+.days{display:grid;grid-template-columns:repeat(7,minmax(52px,1fr));gap:4px;overflow-x:auto;padding:8px 0 6px;scroll-snap-type:x proximity}
+.day{border:0;background:none;color:inherit;font:inherit;padding:4px 2px;border-radius:10px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;scroll-snap-align:start;min-height:44px}
+.day[aria-pressed=true]{background:light-dark(#e6f0fb,#1b3352)}
+.day.far{opacity:.62}
+.dn{font-size:13px;color:var(--mute);white-space:nowrap}.dd{font:700 14px 'Archivo Narrow',sans-serif}
+.barbox{height:100px;width:100%;display:flex;align-items:flex-end;justify-content:center;border-bottom:1px solid var(--line)}
+.bar{width:62%;border-radius:6px 6px 0 0;background:var(--snow);transition:height .5s ease}
+.bar.lite{background:var(--snowlite)}.bar.rain{background:var(--rain)}
+.cm{font:700 14px 'Archivo Narrow',sans-serif;white-space:nowrap}
+.agr{font-size:13px;color:var(--mute);white-space:nowrap}
+.detail{margin-top:10px;padding:12px 14px;border-left:4px solid var(--acc);background:light-dark(#fff6ef,#2a2018);border-radius:0 10px 10px 0;font-size:15px}
+.charts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+.fig{position:relative;min-height:260px}.fig>svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.fig text{font:13px Archivo,sans-serif;fill:var(--mute)}
+.tg{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 8px}
+.tg button{font:600 14px Archivo,sans-serif;min-height:44px;padding:0 14px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+.tg button[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.keys{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--mute);margin-top:8px}
+.keys i{display:inline-block;width:14px;height:4px;border-radius:2px;margin-right:6px;vertical-align:3px}
+.keys .off{text-decoration:line-through;opacity:.6}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13px;color:var(--mute);margin-top:18px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.msg{padding:18px;border-radius:12px;background:var(--card);border:1px solid var(--line);margin-top:20px}
+button.retry{font:600 16px Archivo,sans-serif;min-height:44px;padding:0 18px;border-radius:10px;border:0;background:var(--acc);color:#1a0d00;cursor:pointer;margin-top:10px}
+footer{color:var(--mute);font-size:13px}
+.credit-line{margin-top:14px;font:700 14px 'Archivo Narrow',sans-serif;letter-spacing:.02em;color:var(--ink);opacity:.8}
+.egg{position:absolute;right:3vw;bottom:clamp(24px,4vw,60px);width:clamp(60px,7vw,96px);aspect-ratio:100/130;z-index:2}
+.egg svg{width:100%;height:100%;opacity:0;transition:opacity .5s;overflow:visible}
+.egg:hover svg,.egg.on svg{opacity:.55}
+#egg{right:calc(3vw + clamp(60px,7vw,96px) + 14px)}
+.egg.snowman .arm{transform-origin:66px 56px}
+.egg .arm{transform-origin:57px 40px;transform-box:view-box}
+.egg:hover .arm,.egg.on .arm{animation:wave .5s ease-in-out infinite alternate}
+@keyframes wave{from{transform:rotate(-14deg)}to{transform:rotate(18deg)}}
+@media(prefers-reduced-motion:reduce){.egg .arm{animation:none!important}.egg svg{transition:none}}
+footer a,.sources a{color:var(--snow)}
+.sources{font-size:14px;color:var(--mute);margin-top:14px}
+.mapbox .inner{padding-top:clamp(16px,2.5vw,28px)}
+#map{height:clamp(300px,42vw,460px);border-radius:12px;border:1px solid var(--line);z-index:0}
+.leaflet-tooltip{font:600 13px Archivo,sans-serif}
+.scale{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--mute);margin-top:8px}
+.scale i{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:5px;vertical-align:-1px;border:1px solid #0002}
+.note{font-size:13px;color:var(--mute);margin-top:6px}
+.loc-h{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:end;justify-content:space-between;margin-bottom:6px}
+.loc-h h2{margin:0;font-size:clamp(26px,3.4vw,40px);line-height:1.05}
+.loc-h .meta{color:var(--mute);font-size:14px}
+.loc-h .tot{font:700 17px 'Archivo Narrow',sans-serif;white-space:nowrap;background:var(--snow);color:#fff;padding:4px 10px;border-radius:8px}
+.loc-h .side{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.cambtn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 18px;border-radius:10px;background:var(--acc);color:#1a0d00;font:700 16px Archivo,sans-serif;text-decoration:none}
+.cambtn:hover{filter:brightness(1.08)}.cambtn:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.cam .noimg{display:flex;flex-direction:column;gap:10px;align-items:center;justify-content:center;height:var(--mh);padding:18px;text-align:center;border-radius:10px;background:#0b1726;color:#d8e7f7;border:1px dashed var(--line)}
+.cam .noimg em{font-style:normal;font-weight:600;font-size:16px;max-width:22ch}
+.camlink{display:inline-flex;align-items:center;min-height:44px;color:var(--acc);font-weight:700;text-decoration:none}
+.camlink:hover{text-decoration:underline}
+.maprow{--mh:clamp(260px,30vw,400px);display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:14px;align-items:start}
+.maprow .mm{height:var(--mh)}
+.mm .leaflet-overlay-pane{mix-blend-mode:multiply}
+.cam{margin:0;width:100%}
+.cam>a{display:block;position:relative;height:var(--mh);border-radius:10px;overflow:hidden;background:#0b1726;border:1px solid var(--line)}
+.cam img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cam>a span{position:absolute;right:8px;bottom:8px;background:var(--acc);color:#1a0d00;font:700 14px Archivo,sans-serif;padding:6px 10px;border-radius:8px}
+.cam>a:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.cam figcaption{font-size:13px;color:var(--mute);margin-top:6px}
+@media(max-width:760px){.maprow{grid-template-columns:minmax(0,1fr)}.cam>a,.cam .noimg{height:240px}}
+.mm{height:clamp(240px,32vw,380px);border-radius:12px;border:1px solid var(--line);overflow:hidden;z-index:0}
+.mm .msg{margin:0;height:100%;border:0}
+.hr{display:flex;align-items:center;gap:8px;margin-top:8px}
+.hr input{flex:1;accent-color:var(--acc);min-height:44px}
+.hr button{font:700 20px Archivo,sans-serif;width:44px;height:44px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+@media(max-width:900px){.sum{grid-template-columns:repeat(2,minmax(0,1fr))}.charts{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){.sum{grid-template-columns:minmax(0,1fr);margin-top:-40px}.barbox{height:80px}.fig{min-height:220px}}
+@media(prefers-reduced-motion:reduce){.bar,.photo img{transition:none}}
 </style>
 </head>
 <body>
-<div class="title">Alpi Liguri: neve e onde</div>
-<div class="split">
-  <a class="side m" href="neve.html" aria-label="Vai alla neve">
-    <div class="fx" id="snow"></div>
-    <svg class="scene" viewBox="0 0 600 260" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
-      <path d="M0 260V150L90 110 170 150 260 60 330 120 420 40 500 110 600 80V260Z" fill="#5f8fbf" opacity=".6"/>
-      <path d="M260 60 285 85 300 78 330 120 255 100ZM420 40 445 70 462 62 500 110 415 85Z" fill="#fff" opacity=".85"/>
-      <path d="M0 260V190L110 150 200 175 300 120 380 165 480 110 600 150V260Z" fill="#dbe9f6"/>
-    </svg>
-    <span class="pill">Garessio 2000 · Monesi · Colle d'Oggia · Turini</span>
-    <h2>Montagna</h2>
-    <p>Neve prevista nei prossimi 7 giorni su Garessio 2000, Monesi, Colle d'Oggia e Colle del Turini.</p>
-    <span class="btn">Vai alla neve →</span>
-  </a>
-  <a class="side s" href="mare.html" aria-label="Vai alle onde">
-    <svg class="scene" viewBox="0 0 600 260" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
-      <g class="curl">
-        <path d="M150 260C170 180 240 90 340 80C410 74 455 110 450 150C446 182 415 190 400 170C390 155 405 140 420 150C420 120 390 105 355 110C280 122 250 200 260 260Z" fill="#2fb2c6"/>
-        <path d="M340 80C410 74 455 110 450 150C446 182 415 190 400 170" fill="none" stroke="#e9fbfd" stroke-width="8" stroke-linecap="round"/>
-        <g class="foam" fill="#fff"><circle cx="452" cy="140" r="6"/><circle cx="440" cy="118" r="5"/><circle cx="462" cy="160" r="4"/><circle cx="420" cy="96" r="4"/></g>
+<header class="band">
+  <div class="wrap">
+    <a href="https://santozoppo.github.io/neve-mare/" style="display:inline-block;color:#fff;text-decoration:none;background:#ffffff22;border:1px solid #ffffff66;border-radius:8px;padding:4px 12px;font-size:14px;margin-bottom:14px">← Montagna o mare</a>
+    <h1>Quando nevica sulle Alpi Liguri</h1>
+    <p>Neve prevista nei prossimi 7 giorni per Garessio 2000, Monesi, Colle d'Oggia e Colle del Turini. La neve è calcolata con il modello ICON, temperature e zero termico con ECMWF; gli altri modelli servono da confronto: più sono d'accordo, più la previsione è affidabile.</p>
+  </div>
+  <svg class="ridge" viewBox="0 0 1200 200" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0 200V120L90 95 170 120 260 60 330 100 420 40 500 90 600 70 690 30 770 85 860 55 950 100 1040 50 1120 90 1200 70V200Z" fill="#5f8fbf" opacity=".55"/>
+    <path d="M0 200V150L110 120 200 140 300 95 380 130 480 85 560 125 660 100 760 70 840 115 930 90 1030 125 1110 100 1200 120V200Z" fill="#dbe9f6"/>
+    <path d="M300 95 330 110 352 104 380 130 300 120ZM760 70 790 88 812 82 840 115 760 100Z" fill="#fff"/>
+    <path d="M0 200V175L150 160 300 172 450 155 600 170 760 150 900 168 1050 155 1200 165V200Z" fill="var(--bg)"/>
+  </svg>
+  <div class="egg" id="egg" aria-hidden="true">
+    <svg viewBox="0 0 100 130">
+      <!-- Cowboy che si tocca il cappello, mano sulla fondina, stivali con speroni -->
+      <g fill="#0b1d33" stroke="#0b1d33" stroke-linecap="round" stroke-linejoin="round">
+        <g transform="rotate(-12 50 16)"><ellipse cx="50" cy="16" rx="21" ry="3.6" stroke="none"/><path d="M39 16Q38 3 50 5Q62 3 61 16Z" stroke="none"/></g>
+        <circle cx="50" cy="27" r="8" stroke="none"/><path d="M45 34h10l-5 6z" stroke="none"/>
+        <rect x="42" y="36" width="16" height="28" rx="4" stroke="none"/><rect x="40" y="61" width="20" height="5" rx="1" stroke="none"/>
+        <rect x="35" y="64" width="6" height="13" rx="2" stroke="none"/>
+        <path d="M44 40 34 52 39 63" stroke-width="6" fill="none"/>
+        <path d="M47 66 43 106M54 66 61 104" stroke-width="7" fill="none"/>
+        <path d="M37 104h10v9H34zM57 101l9-2 6 8-4 5-12-3z" stroke="none"/>
+        <circle cx="33" cy="112" r="2.6" fill="none" stroke-width="1.6"/><circle cx="57" cy="112" r="2.6" fill="none" stroke-width="1.6"/>
+        <g class="arm"><path d="M57 40 69 31 63 17" stroke-width="6" fill="none"/><circle cx="63" cy="15" r="3.6" stroke="none"/></g>
       </g>
-      <g class="w1"><path d="M0 190Q75 160 150 190T300 190T450 190T600 190T750 190T900 190V260H0Z" fill="#7fd3e0" opacity=".55"/></g>
-      <g class="w2"><path d="M0 215Q75 190 150 215T300 215T450 215T600 215T750 215T900 215V260H0Z" fill="#d9f3f7"/></g>
+      <path d="M53 43l1.3 2.8 3 .3-2.3 1.9.8 3-2.8-1.7-2.7 1.7.8-3-2.3-1.9 3-.3z" fill="#ffd54a"/>
     </svg>
-    <span class="pill" id="seapill">Tre Ponti, Sanremo</span>
-    <h2>Mare</h2>
-    <p>Altezza, periodo e direzione delle onde a Tre Ponti, Sanremo, per chi fa surf.</p>
-    <span class="btn">Vai alle onde →</span>
-  </a>
-  <div class="sig">Edit by PROP-ANO</div>
-</div>
+  </div>
+  <div class="egg snowman" aria-hidden="true">
+    <svg viewBox="0 0 100 130">
+      <g fill="#0b1d33">
+        <circle cx="50" cy="98" r="28"/><circle cx="50" cy="58" r="19"/><circle cx="50" cy="28" r="13"/>
+        <rect x="36" y="9" width="28" height="5" rx="2"/><rect x="41" y="-6" width="18" height="17" rx="2"/>
+        <path d="M33 60 14 74" stroke="#0b1d33" stroke-width="4" stroke-linecap="round"/>
+        <g class="arm"><path d="M66 56 84 34M84 34l-3-9M84 34l7-5M84 34l9 2" stroke="#0b1d33" stroke-width="4" stroke-linecap="round" fill="none"/></g>
+      </g>
+    </svg>
+  </div>
+</header>
+
+<main class="band" style="padding-top:0">
+  <div class="wrap">
+    <div class="sum" id="sum" aria-live="polite"></div>
+    <div class="sources" id="sources"></div>
+    <div id="locs"><div class="msg">Caricamento previsioni da quattro modelli meteo…</div></div>
+    <div class="legend">
+      <span><i style="background:var(--snow)"></i>Neve prevista da ICON (cm)</span>
+      <span><i style="background:var(--snowlite)"></i>Neve debole, sotto 1 cm</span>
+      <span><i style="background:var(--rain)"></i>Pioggia o pioggia mista a neve</span>
+      <span>"3/5" = modelli che prevedono neve quel giorno</span>
+    </div>
+  </div>
+</main>
+
+<footer class="band" style="padding-top:0">
+  <div class="wrap">
+    Dati meteo: <a href="https://open-meteo.com/" rel="noopener">Open-Meteo.com</a> (CC BY 4.0), che distribuisce i modelli di ECMWF, DWD, Météo-France, e ItaliaMeteo-Arpae. Le previsioni sono indicative: prima di partire controllate i bollettini ufficiali e lo stato delle strade.
+    <div class="credit-line">Edit by PROP-ANO</div>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
 {
-  const box=document.getElementById('snow');let s=7;const r=()=>(s=s*16807%2147483647)/2147483647;
-  box.innerHTML=Array.from({length:90},()=>{const z=2+r()*5;return `<i class="fl" style="left:${(r()*100).toFixed(1)}%;width:${z.toFixed(1)}px;height:${z.toFixed(1)}px;opacity:${(.5+r()*.5).toFixed(2)};--dx:${((r()-.5)*80).toFixed(0)}px;animation-duration:${(4+r()*6).toFixed(1)}s;animation-delay:-${(r()*10).toFixed(1)}s"></i>`}).join('');
-  /* sul telefono non c'è il mouse: l'effetto parte quando la metà è visibile */
-  if(matchMedia('(hover:none)').matches){
-    const io=new IntersectionObserver(es=>es.forEach(e=>e.target.classList.toggle('on',e.intersectionRatio>.5)),{threshold:[0,.5,1]});
-    document.querySelectorAll('.side').forEach(el=>io.observe(el));
+/* Per usare una tua foto, metti l'indirizzo dell'immagine in "foto". */
+const PLACES=[
+  {id:'garessio',name:'Garessio 2000',area:'Colle di Casotto, Cuneo',lat:44.2165,lon:7.9446,alt:1381,foto:'',cam:{img:'https://webcam.torinometeo.org/api/webcams/23/last/',by:'TorinoMeteo',pos:[44.2404,7.9049],dir:150,fov:90},zone:[[44.185,7.90],[44.245,8.04]],wiki:[['it','Garessio 2000'],['it','Colle di Casotto'],['it','Garessio']]},
+  {id:'monesi',name:'Monesi',area:'Mendatica / Triora, Imperia',lat:44.0770,lon:7.7470,alt:1310,foto:'',cam:{img:'https://retelimet.centrometeoligure.it/stazioni/meteo-piaggia/data/webcam/piaggia.jpg',by:'Centro Meteo Ligure, Piaggia',pos:[44.0825,7.7494]},zone:[[44.04,7.72],[44.13,7.90]],wiki:[['it','Monesi di Triora'],['it','Monesi'],['it','Monesi di Mendatica'],['it','Mendatica']]},
+  {id:'oggia',name:"Colle d'Oggia",area:'Valle Argentina, Imperia',lat:43.9990,lon:7.8330,alt:1167,foto:'',cam:{img:'https://imgproxy.windy.com/_/full/plain/current/1793902352/original.jpg?v=2',by:'Relivecam via Windy, Montalto Ligure (6 km a sud)',pos:[43.946,7.850],dir:180,fov:70},zone:[[43.94,7.785],[44.035,7.905]],wiki:[['it',"Colle d'Oggia"],['it','Rezzo']]},
+  {id:'turini',med:true,name:'Colle del Turini',area:'Alpi Marittime, Francia',lat:43.9775,lon:7.3914,alt:1607,foto:'',cam:{img:'https://www.inforoutes06.fr/webcam/CAM096/snap5.jpg',by:'Inforoutes 06',pos:[43.9775,7.3914]},zone:[[43.925,7.30],[44.01,7.47]],wiki:[['it','Colle del Turini'],['fr','Col de Turini'],['en','Col de Turini']]}
+];
+const MODELS=[
+  {id:'ecmwf_ifs025',name:'ECMWF',who:'Centro europeo',col:'#1f6fd1'},
+  {id:'icon_seamless',name:'ICON',who:'DWD, Germania',col:'#d6336c'},
+  {id:'meteofrance_seamless',name:'Météo-France',who:'Arpege/Arome',col:'#0f9d74'},
+  {id:'italia_meteo_arpae_icon_2i',name:'ICON-2I',who:'ItaliaMeteo-Arpae',col:'#e8730c'}
+];
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtDay=d=>new Date(d+'T12:00').toLocaleDateString('it-IT',{weekday:'short'}).replace('.','');
+const fmtDate=d=>new Date(d+'T12:00').toLocaleDateString('it-IT',{day:'numeric',month:'short'}).replace('.','');
+const fmtLong=d=>new Date(d+'T12:00').toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'});
+const r1=n=>(Math.round(n*10)/10).toLocaleString('it-IT');
+const median=a=>{const v=a.filter(x=>x!=null).sort((x,y)=>x-y);if(!v.length)return null;const m=v.length>>1;return v.length%2?v[m]:(v[m-1]+v[m])/2};
+const SNOW_M='icon_seamless',WX_M='ecmwf_ifs025';
+/* Quota della neve: sotto 0° tutta neve, sopra 1,5° niente, in mezzo una parte */
+const wet=T=>T==null||T<=0?1:T>=1.5?0:(1.5-T)/1.5;
+const pick=(o,k,id)=>o?.[k]??o?.[k+'_'+id]??null;
+const state={sel:{},mode:{},hidden:{},hour:{}};
+let DATA=null,OK_MODELS=[];
+
+function url(model){
+  const p=new URLSearchParams({
+    latitude:PLACES.map(p=>p.lat).join(','),longitude:PLACES.map(p=>p.lon).join(','),
+    elevation:PLACES.map(p=>p.alt).join(','),
+    daily:'snowfall_sum,precipitation_sum,temperature_2m_max,temperature_2m_min',
+    hourly:'snowfall,freezing_level_height,temperature_2m',
+    models:model,timezone:'Europe/Rome',forecast_days:'7'
+  });
+  return 'https://api.open-meteo.com/v1/forecast?'+p.toString();
+}
+const GLAT=[],GLON=[];for(let la=43.86;la<=44.341;la+=0.06)GLAT.push(+la.toFixed(3));for(let lo=7.25;lo<=8.101;lo+=0.075)GLON.push(+lo.toFixed(3));
+const GRID=[];GLAT.forEach(la=>GLON.forEach(lo=>GRID.push([la,lo])));
+function gridUrl(){
+  return 'https://api.open-meteo.com/v1/forecast?'+new URLSearchParams({
+    latitude:GRID.map(g=>g[0]).join(','),longitude:GRID.map(g=>g[1]).join(','),
+    daily:'snowfall_sum',models:'icon_seamless',timezone:'Europe/Rome',forecast_days:'7'}).toString();
+}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function getJSON(u,ms=15000,tries=0){
+  const c=new AbortController(),t=setTimeout(()=>c.abort(),ms);let r;
+  try{r=await fetch(u,{signal:c.signal})}finally{clearTimeout(t)}
+  if(r.status===429&&tries<2){const m=document.querySelector('#locs .msg');if(m)m.textContent='Il servizio meteo è molto richiesto in questo momento, riprovo tra pochi secondi…';await sleep(20000*(tries+1));return getJSON(u,ms,tries+1)}
+  if(!r.ok)throw new Error(r.status===429?'troppe richieste (429)':'errore '+r.status);
+  return r.json();
+}
+/* Salva le previsioni nel telefono per 30 minuti: chi ricarica la pagina non rifà le richieste */
+async function cached(key,ttl,fn){
+  try{const c=JSON.parse(localStorage.getItem(key));if(c&&Date.now()-c.t<ttl)return c.v}catch(e){}
+  const v=await fn();
+  try{localStorage.setItem(key,JSON.stringify({t:Date.now(),v}))}catch(e){}
+  return v;
+}
+
+/* Toglie i giorni già passati (i dati salvati possono essere di ieri) */
+function trimPast(r){if(!r)return r;const today=new Date().toLocaleDateString('sv-SE',{timeZone:'Europe/Rome'});
+  const cut=o=>{const dt=o.daily?.time||[],ds=o.daily?.snowfall_sum||[];o.prev=dt.reduce((a,t,i)=>t<today?a+(ds[i]||0):a,0);for(const part of [o.daily,o.hourly]){if(!part?.time)continue;const keep=part.time.map(t=>t.slice(0,10)>=today);
+    if(!keep.some(Boolean))continue;for(const k in part)if(Array.isArray(part[k]))part[k]=part[k].filter((_,i)=>keep[i])}return o};
+  return Array.isArray(r)?r.map(cut):cut(r)}
+function build(results){
+  OK_MODELS=MODELS.filter((m,i)=>results[i]);
+  return PLACES.map((pl,pi)=>{
+    const per={};
+    OK_MODELS.forEach(m=>{
+      const raw=results[MODELS.indexOf(m)],o=Array.isArray(raw)?raw[pi]:raw,d=o.daily,h=o.hourly,id=m.id;
+      const snow0=pick(d,'snowfall_sum',id),prec=pick(d,'precipitation_sum',id),tx=pick(d,'temperature_2m_max',id),tn=pick(d,'temperature_2m_min',id);
+      const hs0=pick(h,'snowfall',id)||[],hf=pick(h,'freezing_level_height',id)||[],htp=pick(h,'temperature_2m',id)||[];
+      /* Correzione: il modello calcola la neve sul suo terreno; se alla quota della località fa più di 0°, parte è pioggia/neve bagnata che non attacca */
+      const hs=hs0.map((v,j)=>v==null?v:v*wet(htp[j]));
+      const snow=snow0&&d.time.map((t,k)=>{if(snow0[k]==null)return null;let a=0,b=0;h.time.forEach((ht,j)=>{if(ht.startsWith(t)&&hs0[j]){a+=hs[j];b+=hs0[j]}});return b?snow0[k]*a/b:snow0[k]});
+      per[id]={prev:o.prev||0,times:d.time,snow,prec,tx,tn,fz:d.time.map(t=>{let mn=null;h.time.forEach((ht,j)=>{if(ht.startsWith(t)&&hf[j]!=null&&(mn==null||hf[j]<mn))mn=hf[j]});return mn}),
+        hrs:d.time.map(t=>{const a=[];h.time.forEach((ht,j)=>{if(ht.startsWith(t))a.push(hs[j])});return a}),
+        ht:d.time.map(t=>{const a=[];h.time.forEach((ht,j)=>{if(ht.startsWith(t))a.push(htp[j]??null)});return a})};
+    });
+    const times=per[OK_MODELS[0].id].times;
+    const days=times.map((t,k)=>{
+      const vals=OK_MODELS.map(m=>per[m.id].snow?.[k]).filter(v=>v!=null);
+      const pv=OK_MODELS.map(m=>per[m.id].prec?.[k]).filter(v=>v!=null);
+      /* Neve da ICON (se non arriva così lontano: ECMWF); meteo da ECMWF (se manca: mediana degli altri) */
+      const I=per[SNOW_M],E=per[WX_M];
+      /* Località con med:true (Turini): neve = valore di mezzo tra tutti i modelli */
+      const src=pl.med?null:I?.snow?.[k]!=null?SNOW_M:E?.snow?.[k]!=null?WX_M:null,S=src?per[src]:null;
+      const hrs=[],hm=[],hlo=[],hhi=[];for(let hh=0;hh<24;hh++){const v=OK_MODELS.map(m=>per[m.id].hrs[k]?.[hh]).filter(x=>x!=null);
+        const main=S?.hrs[k]?.[hh];if(main!=null?main>0.05:(v.length&&v.filter(x=>x>0.05).length>=v.length/2))hrs.push(hh);
+        hm.push(main??(v.length?median(v):null));hlo.push(v.length?Math.min(...v):null);hhi.push(v.length?Math.max(...v):null)}
+      const pref=(m,key)=>{const v=per[m]?.[key]?.[k];return v!=null?v:median(OK_MODELS.map(x=>per[x.id][key]?.[k]))};
+      return{t,snow:src?S.snow[k]:(median(vals)||0),src,lo:vals.length?Math.min(...vals):0,hi:vals.length?Math.max(...vals):0,
+        prec:(src?S.prec?.[k]:null)??(median(pv)||0),n:vals.length,yes:vals.filter(v=>v>=0.5).length,
+        tmin:pref(WX_M,'tn'),tmax:pref(WX_M,'tx'),fz:pref(WX_M,'fz'),
+        ht:E?.ht[k]?.some(v=>v!=null)?E.ht[k]:null,hrs,hm,hlo,hhi,far:false};
+    });
+    return{...pl,per,days};
+  });
+}
+
+const kind=x=>x.snow>=1?'snow':x.snow>0.05?'lite':x.prec>=0.5?'rain':'';
+function hoursText(h){if(!h.length)return'';const a=Math.min(...h),b=Math.max(...h)+1;return a===0&&b===24?'per gran parte della giornata':`circa tra le ${a} e le ${b}`}
+const next=p=>p.days.find(x=>x.snow>=1)||p.days.find(x=>x.snow>0.05);
+
+function renderSum(){
+  document.getElementById('sum').innerHTML=DATA.map(p=>{
+    const n=next(p);
+    return`<button class="s" data-go="${p.id}"><h3>${esc(p.name)}</h3><div class="alt">${p.alt} m</div>
+      <div class="big${n?'':' none'}">${n?r1(n.snow)+' cm':'Niente neve'}</div>
+      <div class="when">${n?'Prossima neve: '+esc(fmtLong(n.t))+` · ${n.src?'ICON':'valore di mezzo'} · ${n.yes}/${n.n} modelli d'accordo`+(n.far?' · incerto':''):'nei prossimi 7 giorni'}</div></button>`;
+  }).join('');
+  document.getElementById('sources').textContent=`Modelli usati in questo momento: ${OK_MODELS.map(m=>m.name+' ('+m.who+')').join(', ')}.`+(DATA_TIME?` Dati aggiornati alle ${new Date(DATA_TIME).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Rome'})}.`:'');
+}
+
+function detail(p,x){
+  const k=kind(x);let s=`<strong>${esc(fmtLong(x.t))}</strong> a ${esc(p.name)}: `;
+  if(k==='snow'||k==='lite')s+=`circa ${r1(x.snow)} cm di neve fresca ${esc(hoursText(x.hrs))} secondo ${!x.src?'il valore di mezzo tra i modelli':x.src===WX_M?'ECMWF (ICON non arriva così lontano)':'ICON'}. Tutti i modelli insieme vanno da ${r1(x.lo)} a ${r1(x.hi)} cm; ${x.yes} su ${x.n} prevedono neve.`;
+  else if(k==='rain')s+=`${r1(x.prec)} mm di precipitazioni, ma troppo caldo per la neve a ${p.alt} m.`;
+  else s+='nessuna precipitazione prevista.';
+  if(x.tmin!=null)s+=` Meteo secondo ECMWF: temperature tra ${r1(x.tmin)}° e ${r1(x.tmax)}°.`;
+  if(x.fz!=null)s+=` Zero termico minimo intorno a ${Math.round(x.fz/50)*50} m.`;
+  if(x.n<OK_MODELS.length)s+=` Dato basato su ${x.n} modelli: gli altri non arrivano così lontano.`;
+  return s;
+}
+
+/* Riquadro webcam: immagine aggiornata ogni 30 minuti, cliccando si apre la webcam */
+function camHTML(p){
+  const c=p.cam;if(!c)return'';
+  if(!c.img)return`<figure class="cam"><div class="noimg"><em>Immagine in tempo reale non disponibile per ora</em>
+    <a class="camlink" href="${esc(c.href)}" target="_blank" rel="noopener">Apri la webcam del ${esc(p.name)} ›</a></div>
+    <figcaption>${esc(c.by)}</figcaption></figure>`;
+  const h=camKey();
+  return`<figure class="cam"><a href="${esc(c.img)}" target="_blank" rel="noopener" aria-label="Apri la webcam di ${esc(p.name)} a tutto schermo">
+    <img data-cam="${esc(c.img)}" src="${esc(camSrc(c.img,h))}" alt="Webcam di ${esc(p.name)}" loading="lazy"><span>Webcam ›</span></a>
+    <figcaption><span class="camtime">Immagine delle ${h.slice(11,16)}</span> · non è in tempo reale · ${esc(c.by)}</figcaption></figure>`;
+}
+/* Stessa immagine per mezz'ora; alle :00 e alle :30 si ricarica */
+function camKey(){const h=romeHourKey(),m=+new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Rome',minute:'2-digit'}).format(new Date());return h.slice(0,14)+(m<30?'00':'30')}
+function camSrc(u,h){return u+(u.includes('?')?'&':'?')+'h='+h.replace(/\D/g,'')}
+function renderLocs(){
+  document.getElementById('locs').innerHTML=DATA.map(p=>{
+    const max=Math.max(5,...p.days.map(x=>x.snow));
+    const tot7=p.days.slice(0,7).reduce((a,x)=>a+x.snow,0);
+    const fi=p.days.findIndex(x=>x.snow>0.05);
+    const sel=state.sel[p.id]??(fi>=0?fi:0);state.sel[p.id]=sel;
+    state.mode[p.id]??='day';state.hidden[p.id]??={};
+    const cols=p.days.map((x,i)=>{
+      const k=kind(x),hgt=k==='snow'?Math.max(8,x.snow/max*100):k==='lite'?6:k==='rain'?Math.min(30,4+x.prec*1.5):0;
+      const lbl=k==='snow'||k==='lite'?r1(x.snow):'–';
+      return`<button class="day${x.far?' far':''}" data-p="${p.id}" data-i="${i}" aria-pressed="${i===sel}" aria-label="${esc(fmtLong(x.t))}: ${lbl==='–'?'niente neve':lbl+' centimetri'}">
+        <span class="dn">${esc(fmtDay(x.t))}</span><span class="dd">${esc(fmtDate(x.t))}</span>
+        <span class="barbox"><span class="bar ${k==='lite'?'lite':k==='rain'?'rain':''}" style="height:${hgt}%"></span></span>
+        <span class="cm">${lbl}</span><span class="agr">${x.n?x.yes+'/'+x.n:''}</span></button>`;
+    }).join('');
+    const keys=OK_MODELS.map(m=>`<button class="${state.hidden[p.id][m.id]?'off':''}" data-key="${p.id}" data-m="${m.id}" style="all:unset;cursor:pointer;min-height:24px"><i style="background:${m.col}"></i>${esc(m.name)}</button>`).join('')+'<span>Linea più spessa: modello usato nelle previsioni</span>';
+    return`<section class="loc" id="${p.id}">
+      <div class="inner">
+        <div class="loc-h"><div><h2>${esc(p.name)}</h2><div class="meta">${esc(p.area)} · ${p.alt} m</div></div>
+          <span class="tot">${r1(tot7)} cm nei prossimi 7 giorni</span></div>
+        <h4>Dove nevica di più · <span id="mt-${p.id}"></span></h4><p class="sub">Le prossime 8 ore, ora per ora: valore di mezzo tra ICON, ICON-2I e Météo-France, i modelli più dettagliati. Sposta il cursore per cambiare ora. Punto arancio: la webcam, con il cono di quello che inquadra.</p>
+        <div class="maprow"><div><div class="mm" id="mm-${p.id}"><div class="msg">Caricamento mappa…</div></div>
+        <div class="hr"><button data-hp="${p.id}" data-dv="-1" aria-label="Mezz'ora prima">‹</button><input type="range" min="0" max="8" step="0.5" value="0" id="hr-${p.id}" data-hr="${p.id}" aria-label="Ore da adesso"><button data-hp="${p.id}" data-dv="1" aria-label="Mezz'ora dopo">›</button></div>
+        <div class="scale"><span><i style="background:#ffd600"></i>Debole: 0,1–0,5 cm/h</span><span><i style="background:#ff8200"></i>Moderata: 0,5–1,5 cm/h</span><span><i style="background:#dc1e1e"></i>Forte: oltre 1,5 cm/h</span></div>
+        <p class="note" id="mi-${p.id}"></p></div>
+        ${camHTML(p)}</div>
+      </div>
+      <div class="inner">
+        <h4>Neve giorno per giorno</h4><p class="sub">Neve secondo ${p.med?'il valore di mezzo tra i modelli':'ICON'}. Tocca un giorno per i dettagli.</p>
+        <div class="days" role="group" aria-label="Neve giorno per giorno a ${esc(p.name)}">${cols}</div>
+        <div class="detail" id="d-${p.id}">${detail(p,p.days[sel])}</div>
+        <div class="charts">
+          <div><h4>Neve secondo ogni modello</h4>
+            <div class="tg"><button data-mode="${p.id}" data-v="day" aria-pressed="${state.mode[p.id]==='day'}">Neve fresca totale</button><button data-mode="${p.id}" data-v="cum" aria-pressed="${state.mode[p.id]==='cum'}">Stima al suolo</button></div>
+            <p class="sub">7 giorni ora per ora, 3 alla volta: sposta il cursore per andare avanti e indietro. "Neve fresca totale": neve di ieri più quella prevista, sommata ora per ora senza togliere niente. "Stima al suolo": la stessa neve, che si assesta e si scioglie quando fa sopra zero. Stima indicativa.</p>
+            <div class="fig"><svg id="cs-${p.id}" role="img" aria-label="Neve prevista da ogni modello a ${esc(p.name)}"></svg></div>
+            <div class="hr"><button data-wp="${p.id}" data-dv="-1" aria-label="6 ore prima">‹</button><input type="range" min="0" max="${Math.max(0,p.days.length*24-72)}" step="6" value="0" id="win-${p.id}" data-win="${p.id}" aria-label="Sposta i giorni del grafico"><button data-wp="${p.id}" data-dv="1" aria-label="6 ore dopo">›</button></div>
+            <div class="keys">${keys}</div></div>
+          <div><h4>Zero termico e quota della località</h4><p class="sub">Sotto la linea tratteggiata le precipitazioni cadono come neve.</p>
+            <div class="fig"><svg id="cf-${p.id}" role="img" aria-label="Zero termico previsto a ${esc(p.name)}"></svg></div>
+            <div class="keys">${keys}</div></div>
+          <div style="grid-column:1/-1"><h4>Neve ora per ora · <span id="hd-${p.id}">${esc(fmtLong(p.days[sel].t))}</span></h4><p class="sub">Barre: neve all'ora secondo ${p.med?'il valore di mezzo tra i modelli':'ICON'}, linea sottile: da minimo a massimo tra tutti i modelli. Linea arancio: temperatura secondo ECMWF. Tocca un giorno sopra per cambiare.</p>
+            <div class="fig"><svg id="ch-${p.id}" role="img" aria-label="Neve ora per ora a ${esc(p.name)}"></svg></div></div>
+        </div>
+      </div></section>`;
+  }).join('');
+  DATA.forEach(p=>{for(const [k,f] of [['cs',snowChart],['cf',fzChart],['ch',hourChart]]){drawers.set(k+'-'+p.id,()=>f(p));ro.observe(document.getElementById(k+'-'+p.id))}});
+}
+
+const drawers=new Map();
+const ro=new ResizeObserver(es=>es.forEach(e=>drawers.get(e.target.id)?.()));
+
+function lineChart(svg,times,series,opt){
+  const W=svg.clientWidth,H=svg.clientHeight;if(!W||!H)return;
+  const L=44,R=10,T=12,B=opt.day?42:26,n=times.length,small=W<520;
+  const all=series.flatMap(s=>s.vals).filter(v=>v!=null).concat(opt.ref!=null?[opt.ref]:[]);
+  let lo=opt.min0?0:Math.min(...all),hi=Math.max(opt.minMax||0,...all);
+  if(!opt.min0){const pad=(hi-lo)*.08||100;lo-=pad;hi+=pad}
+  /* Scala con numeri tondi (es. 250, 500, 1000) */
+  const nice=x=>{const e=10**Math.floor(Math.log10(x)),f=x/e;return(f<=1?1:f<=2?2:f<=2.5?2.5:f<=5?5:10)*e},st=nice((hi-lo)/4||1);
+  lo=Math.floor(lo/st)*st;const G=Math.max(1,Math.ceil((hi-lo)/st-1e-9));hi=lo+G*st;
+  const x=i=>L+i*(W-L-R)/(n-1),y=v=>T+(1-(v-lo)/(hi-lo||1))*(H-T-B);
+  let g='';
+  for(let k=0;k<=G;k++){const v=lo+st*k,yy=y(v);g+=`<line x1="${L}" x2="${W-R}" y1="${yy}" y2="${yy}" stroke="var(--line)"/><text x="${L-6}" y="${yy+4}" text-anchor="end">${r1(v)}${k===G?opt.unit:''}</text>`}
+  const step=small?2:1;
+  times.forEach((t,i)=>{const lb=opt.lab?opt.lab(t,i):i%step===0?(small?new Date(t+'T12:00').getDate():fmtDate(t)):null;
+    /* Grafici ora per ora: linea tratteggiata a mezzanotte, ore sotto e giorno della settimana sotto le ore */
+    if(opt.day&&t.endsWith('T00:00')&&i>0)g+=`<line x1="${x(i)}" x2="${x(i)}" y1="${T}" y2="${H-B}" stroke="var(--line)" stroke-dasharray="3 4"/>`;
+    if(opt.day&&t.endsWith('T12:00'))g+=`<text x="${x(i)}" y="${H-5}" text-anchor="middle" font-weight="700">${esc(opt.day(t))}</text>`;
+    if(lb!=null)g+=`<text x="${x(i)}" y="${opt.day?H-B+16:H-6}" text-anchor="middle">${esc(String(lb))}</text>`});
+  if(opt.ref!=null)g+=`<line x1="${L}" x2="${W-R}" y1="${y(opt.ref)}" y2="${y(opt.ref)}" stroke="var(--acc)" stroke-width="2" stroke-dasharray="6 5"/><text x="${W-R}" y="${y(opt.ref)-6}" text-anchor="end" style="fill:var(--acc)">${esc(opt.refLabel)}</text>`;
+  series.forEach(s=>{
+    let d='',pen=false;s.vals.forEach((v,i)=>{if(v==null){pen=false;return}d+=(pen?'L':'M')+x(i).toFixed(1)+' '+y(v).toFixed(1);pen=true});
+    g+=`<path d="${d}" fill="none" stroke="${s.col}" stroke-width="${s.w||2}" stroke-linejoin="round" stroke-linecap="round" opacity="${s.op||.9}"/>`;
+  });
+  svg.innerHTML=g;
+}
+function seriesFor(p,key,cum){
+  const out=OK_MODELS.filter(m=>!state.hidden[p.id][m.id]).map(m=>{
+    let v=key==='fz'?p.per[m.id].fz:(p.per[m.id].snow||[]).slice();
+    /* Stima al suolo: la neve vecchia si assesta (-15% al giorno) e si scioglie quando fa sopra zero (1,5 cm per grado al giorno) */
+    if(cum){let a=p.per[m.id].prev||0;const ht=p.per[m.id].ht;v=v.map((z,i)=>{if(z==null)return null;const gg=(ht[i]||[]).reduce((s,t)=>s+(t>0?t:0),0)/24;return a=Math.max(0,a*.85+z-gg*1.5)})}
+    /* ECMWF su Open-Meteo non dà lo zero termico: in quel caso la linea principale è ICON */
+    const fzM=OK_MODELS.some(x=>x.id===WX_M)&&p.per[WX_M].fz?.some(z=>z!=null)?WX_M:SNOW_M;
+    const main=key==='fz'?m.id===fzM:!p.med&&m.id===SNOW_M;
+    return{col:m.col,vals:v,w:main?4.5:1.8,op:main?1:.55,main};
+  });
+  return out.sort((a,b)=>a.main-b.main);
+}
+/* Stima al suolo ora per ora sui prossimi 3 giorni, per ogni modello */
+/* Neve dei prossimi 3 giorni ora per ora, per ogni modello.
+   raw=true: neve fresca totale (somma, senza togliere niente); altrimenti stima al suolo (assestamento e scioglimento) */
+function groundSeries(p,nd,raw){
+  return OK_MODELS.filter(m=>!state.hidden[p.id][m.id]).map(m=>{const P=p.per[m.id];let a=P.prev||0;const v=[];
+    for(let k=0;k<nd;k++){const hr=P.hrs[k]||[],tt=P.ht[k]||[],sum=hr.reduce((s,x)=>s+(x||0),0),f=sum>0&&P.snow?.[k]!=null?P.snow[k]/sum:1;
+      for(let h=0;h<24;h++){const s=hr[h];if(s==null||P.snow?.[k]==null){v.push(null);continue}
+        if(raw){a+=s*f;v.push(a);continue}
+        a=Math.max(0,a*.99325+s*f-Math.max(0,tt[h]??0)*1.5/24);v.push(a)}}
+    const main=!p.med&&m.id===SNOW_M;return{col:m.col,vals:v,w:main?4.5:1.8,op:main?1:.55,main}}).sort((a,b)=>a.main-b.main);
+}
+/* Tutti i 7 giorni ora per ora; se ne vedono 3 (72 ore) alla volta, spostabili col cursore */
+function snowChart(p){const cum=state.mode[p.id]==='cum',svg=document.getElementById('cs-'+p.id),nd=p.days.length,times=[],small=svg.clientWidth<520;
+  for(let k=0;k<nd;k++)for(let h=0;h<24;h++)times.push(p.days[k].t+'T'+String(h).padStart(2,'0')+':00');
+  /* Ore scritte: 6, 12, 18 e 24 (mezzanotte); sul telefono 12 e 24 */
+  const lab=(t,i)=>{const h=+t.slice(11,13);return h===0?(i===0?'0':'24'):(small?h===12:[6,12,18].includes(h))?String(h):null};
+  const day=t=>new Date(t.slice(0,10)+'T12:00').toLocaleDateString('it-IT',{weekday:'short'});
+  const off=Math.max(0,Math.min(times.length-72,state.win?.[p.id]||0)),cut=a=>a.slice(off,off+72);
+  lineChart(svg,cut(times),groundSeries(p,nd,!cum).map(s=>({...s,vals:cut(s.vals)})),{min0:true,minMax:10,unit:' cm',lab,day})}
+function fzChart(p){lineChart(document.getElementById('cf-'+p.id),p.days.map(d=>d.t),seriesFor(p,'fz',false),{unit:' m',ref:p.alt,refLabel:p.name+' '+p.alt+' m'})}
+
+function hourChart(p){
+  const svg=document.getElementById('ch-'+p.id),W=svg.clientWidth,H=svg.clientHeight;if(!W||!H)return;
+  const d=p.days[state.sel[p.id]],small=W<520,L=40,R=40,T=14,B=26;
+  const temps=d.ht||[...Array(24)].map((_,h)=>{const i=p.bm?.idx[d.t+'T'+String(h).padStart(2,'0')+':00'];return i!=null?p.bm.temp[i]:null});
+  if(!d.hm.some(v=>v!=null)){svg.innerHTML=`<text x="${W/2}" y="${H/2}" text-anchor="middle">Dati orari non disponibili per questo giorno</text>`;return}
+  const mx=Math.max(0.5,...d.hhi.filter(v=>v!=null)),cw=(W-L-R)/24,x=h=>L+(h+.5)*cw,ys=v=>T+(1-v/mx)*(H-T-B);
+  const tv=temps.filter(v=>v!=null),tlo=Math.min(0,...tv)-1,thi=Math.max(0,...tv)+1,yt=v=>T+(1-(v-tlo)/(thi-tlo))*(H-T-B);
+  let g='';
+  for(let k=0;k<=4;k++){const v=mx*k/4,yy=ys(v);g+=`<line x1="${L}" x2="${W-R}" y1="${yy}" y2="${yy}" stroke="var(--line)"/><text x="${L-6}" y="${yy+4}" text-anchor="end">${r1(v)}${k===4?' cm/h':''}</text>`;
+    if(tv.length){const t=tlo+(thi-tlo)*k/4;g+=`<text x="${W-R+6}" y="${yy+4}" style="fill:var(--acc)">${Math.round(t)}°</text>`}}
+  for(let h=0;h<24;h+=small?6:3)g+=`<text x="${x(h)}" y="${H-6}" text-anchor="middle">${h}:00</text>`;
+  d.hm.forEach((v,h)=>{if(v==null)return;
+    if(d.hhi[h]>0.02)g+=`<line x1="${x(h)}" x2="${x(h)}" y1="${ys(d.hlo[h])}" y2="${ys(d.hhi[h])}" stroke="var(--mute)" stroke-width="1.5"/>`;
+    if(v>0)g+=`<rect x="${x(h)-cw*.32}" y="${ys(v)}" width="${cw*.64}" height="${ys(0)-ys(v)}" rx="2" fill="var(--snow)"/>`});
+  if(tv.length){
+    g+=`<line x1="${L}" x2="${W-R}" y1="${yt(0)}" y2="${yt(0)}" stroke="var(--acc)" stroke-dasharray="4 4" opacity=".6"/>`;
+    let pth='',pen=false;temps.forEach((v,h)=>{if(v==null){pen=false;return}pth+=(pen?'L':'M')+x(h).toFixed(1)+' '+yt(v).toFixed(1);pen=true});
+    g+=`<path d="${pth}" fill="none" stroke="var(--acc)" stroke-width="2.5" stroke-linejoin="round"/>`}
+  if(!d.hm.some(v=>v>0))g+=`<text x="${W/2}" y="${T+16}" text-anchor="middle">Nessuna nevicata prevista in questo giorno</text>`;
+  svg.innerHTML=g;
+}
+let MAP=null;
+/* Zone colorate: giallo 1-5 cm, arancio 5-15 cm, rosso oltre 15 cm */
+const BANDS=[[15,[220,30,30,.5]],[5,[255,130,0,.45]],[1,[255,214,0,.38]]];
+function renderMap(raw){
+  const box=document.getElementById('map');
+  if(!window.L||!raw){box.innerHTML='<div class="msg">La mappa non si è caricata in questo momento.</div>';return}
+  const arr=Array.isArray(raw)?raw:[raw],nr=GLAT.length,nc=GLON.length;
+  const cell=(r,c)=>arr[r*nc+c];
+  if(MAP)MAP.remove();box.innerHTML='';
+  MAP=L.map(box,{scrollWheelZoom:false}).fitBounds([[43.87,7.27],[44.33,8.09]]);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:17,attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(MAP);
+  const bounds=[[GLAT[0],GLON[0]],[GLAT[nr-1],GLON[nc-1]]];
+  let overlay=null,V=[];
+  const valAt=(fr,fc)=>{const r0=Math.max(0,Math.min(nr-2,Math.floor(fr))),c0=Math.max(0,Math.min(nc-2,Math.floor(fc))),dr=fr-r0,dc=fc-c0;
+    return V[r0][c0]*(1-dr)*(1-dc)+V[r0][c0+1]*(1-dr)*dc+V[r0+1][c0]*dr*(1-dc)+V[r0+1][c0+1]*dr*dc};
+  state.drawMap=()=>{const nd=state.mapDays||3;
+    V=[...Array(nr)].map((_,r)=>[...Array(nc)].map((_,c)=>{const o=cell(r,c);if(!o||!(o.elevation>20))return 0;return(pick(o.daily,'snowfall_sum','icon_seamless')||[]).slice(0,nd).reduce((a,v)=>a+(v||0),0)}));
+    const S=14,W=(nc-1)*S,H=(nr-1)*S,cv=document.createElement('canvas');cv.width=W;cv.height=H;
+    const cx=cv.getContext('2d'),img=cx.createImageData(W,H);
+    for(let py=0;py<H;py++)for(let px=0;px<W;px++){
+      const v=valAt((H-1-py)/S,px/S),b=BANDS.find(b=>v>=b[0]);if(!b)continue;
+      const k=(py*W+px)*4,c=b[1];img.data[k]=c[0];img.data[k+1]=c[1];img.data[k+2]=c[2];img.data[k+3]=c[3]*255}
+    cx.putImageData(img,0,0);
+    if(overlay)overlay.remove();overlay=L.imageOverlay(cv.toDataURL(),bounds,{opacity:1,interactive:false}).addTo(MAP)};
+  state.drawMap();
+  MAP.on('click',e=>{const{lat,lng}=e.latlng;if(lat<GLAT[0]||lat>GLAT[nr-1]||lng<GLON[0]||lng>GLON[nc-1])return;
+    const v=valAt((lat-GLAT[0])/(GLAT[1]-GLAT[0]),(lng-GLON[0])/(GLON[1]-GLON[0]));
+    L.popup().setLatLng(e.latlng).setContent(`Circa ${r1(v)} cm nei prossimi ${state.mapDays||3} giorni`).openOn(MAP)});
+  PLACES.forEach(p=>L.circleMarker([p.lat,p.lon],{radius:7,color:'#1a0d00',weight:2,fillColor:'#1f6fd1',fillOpacity:1})
+    .bindTooltip(p.name,{permanent:true,direction:'top',offset:[0,-6]}).addTo(MAP));
+  setTimeout(()=>MAP.invalidateSize(),300);
+}
+
+function fail(msg){
+  document.getElementById('sum').innerHTML='';
+  document.getElementById('locs').innerHTML=`<div class="msg"><strong>Non riesco a scaricare le previsioni.</strong><br>${/429/.test(msg)?'Il servizio meteo gratuito ha ricevuto troppe richieste dalla tua connessione in poco tempo. Aspetta un paio di minuti e premi Riprova.<br>':''}Se stai guardando l'anteprima dentro Claude, è normale: l'anteprima blocca i collegamenti a internet. Scarica il file e aprilo con Chrome, Safari o Firefox.<br><small>Dettaglio: ${esc(msg)}</small><br><button class="retry" id="retry">Riprova</button></div>`;
+}
+
+/* Mini mappe: griglia 5x5 attorno a ogni località, neve oraria ICON */
+const MR=[0,1,2,3,4],MC=[0,1,2,3,4,5,6],NP=MR.length*MC.length;
+/* Griglia costruita sulla zona scelta per ogni località, allargata in modo che i colori coprano la mappa su schermi larghi e stretti */
+function gridFor(p){
+  const [[s,w],[n,e]]=p.zone,cla=(s+n)/2,clo=(w+e)/2,k=Math.cos(cla*Math.PI/180);
+  const hKm=(n-s)*111,wKm=(e-w)*111*k,W=Math.max(wKm,hKm*2.6)*1.08,H=Math.max(hKm,wKm/1.2)*1.08;
+  const dla=H/111,dlo=W/(111*k);
+  return{lats:MR.map(i=>cla-dla/2+i*dla/(MR.length-1)),lons:MC.map(j=>clo-dlo/2+j*dlo/(MC.length-1))};
+}
+PLACES.forEach(p=>p.grid=gridFor(p));
+const LOC=PLACES.flatMap(p=>p.grid.lats.flatMap(la=>p.grid.lons.map(lo=>[+la.toFixed(4),+lo.toFixed(4)])));
+const locUrl=()=>'https://api.open-meteo.com/v1/forecast?'+new URLSearchParams({latitude:LOC.map(g=>g[0]).join(','),longitude:LOC.map(g=>g[1]).join(','),
+  hourly:'snowfall',models:MAP_MODELS.join(','),timezone:'Europe/Rome',forecast_days:'2'}).toString();
+const MAP_MODELS=['icon_seamless','italia_meteo_arpae_icon_2i','meteofrance_seamless'];
+const HBANDS=[[1.5,[230,40,40,.6]],[0.5,[255,140,0,.55]],[0.1,[255,220,0,.5]]];
+const MINI={};let LOCDATA=null;
+function overlayURL(V,bands,S){
+  const nr=V.length,nc=V[0].length,W=(nc-1)*S,H=(nr-1)*S,cv=document.createElement('canvas');cv.width=W;cv.height=H;
+  const cx=cv.getContext('2d'),img=cx.createImageData(W,H);
+  for(let py=0;py<H;py++)for(let px=0;px<W;px++){
+    const fr=(H-1-py)/S,fc=px/S,r0=Math.min(nr-2,Math.floor(fr)),c0=Math.min(nc-2,Math.floor(fc)),dr=fr-r0,dc=fc-c0;
+    const v=V[r0][c0]*(1-dr)*(1-dc)+V[r0][c0+1]*(1-dr)*dc+V[r0+1][c0]*dr*(1-dc)+V[r0+1][c0+1]*dr*dc;
+    const b=bands.find(b=>v>=b[0]);if(!b)continue;const k=(py*W+px)*4,c=b[1];
+    img.data[k]=c[0];img.data[k+1]=c[1];img.data[k+2]=c[2];img.data[k+3]=c[3]*255}
+  cx.putImageData(img,0,0);return cv.toDataURL();
+}
+function romeHourKey(){const f=new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Rome',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',hourCycle:'h23'}).format(new Date());return f.slice(0,10)+'T'+f.slice(11,13)+':00'}
+function peakHour(p){const d=p.days[state.sel[p.id]];let best=12,mx=0;d.hm.forEach((v,h)=>{if(v>mx){mx=v;best=h}});return best}
+function syncHour(p){const el=document.getElementById('hr-'+p.id);if(el)el.value=state.hour[p.id];drawMini(p)}
+function setupMini(p,pi){
+  const box=document.getElementById('mm-'+p.id);if(!box)return;
+  if(!window.L||!LOCDATA){box.innerHTML='<div class="msg">La mappa non si è caricata in questo momento.</div>';return}
+  const arr=Array.isArray(LOCDATA)?LOCDATA:[LOCDATA],pts=arr.slice(pi*NP,pi*NP+NP);
+  const {lats,lons}=p.grid;
+  box.innerHTML='';
+  const m=L.map(box,{zoomControl:false,dragging:false,scrollWheelZoom:false,doubleClickZoom:false,boxZoom:false,keyboard:false,touchZoom:false,tap:false,zoomSnap:0.05});
+  /* Inquadra la zona scelta (come nelle immagini di riferimento) */
+  const fit=()=>m.fitBounds(p.zone,{animate:false,padding:[4,4]});fit();m.on('resize',fit);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:17,attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(m);
+  /* Webcam: punto arancio e, se si sa, il cono di quello che inquadra (3 km) */
+  const c=p.cam;if(c?.pos){const [cla,clo]=c.pos;
+    if(c.dir!=null){const arc=[];for(let a=c.dir-c.fov/2;a<=c.dir+c.fov/2+.1;a+=5){const r=a*Math.PI/180;arc.push([cla+3/111*Math.cos(r),clo+3/(111*Math.cos(cla*Math.PI/180))*Math.sin(r)])}
+      L.polygon([[cla,clo],...arc],{color:'#ff7a1a',weight:1,fillColor:'#ff7a1a',fillOpacity:.22,interactive:false}).addTo(m)}
+    L.circleMarker([cla,clo],{radius:5,color:'#1a0d00',weight:2,fillColor:'#ff7a1a',fillOpacity:1}).bindTooltip('Webcam'+(c.dir==null?' (direzione non nota)':''),{direction:'bottom',offset:[0,6]}).addTo(m)}
+  L.circleMarker([p.lat,p.lon],{radius:6,color:'#1a0d00',weight:2,fillColor:'#1f6fd1',fillOpacity:1}).bindTooltip(p.name,{permanent:true,direction:'top',offset:[0,-6]}).addTo(m);
+  const now=romeHourKey(),times=pts[0]?.hourly?.time||[];let start=times.indexOf(now);if(start<0)start=0;
+  MINI[p.id]={m,pts,lats,lons,ov:null,start,times};
+  if(state.hour[p.id]==null)state.hour[p.id]=0;
+  syncHour(p);setTimeout(()=>m.invalidateSize(),300);
+}
+function drawMini(p){
+  const M=MINI[p.id];if(!M)return;const off=state.hour[p.id]??0,t=M.start+Math.floor(off),fr30=off%1,key=M.times[t]||'';
+  /* Valore di mezzo (mediana) tra ICON, ICON-2I e Météo-France */
+  const medAt=(o,i)=>{if(!o)return 0;const v=MAP_MODELS.map(m=>o.hourly?.['snowfall_'+m]?.[i]).filter(x=>x!=null);return v.length?median(v):0};
+  /* Passi da 30 minuti: a metà tra due ore si usa la media tra l'ora prima e quella dopo */
+  const at=(o,i)=>fr30?(medAt(o,i)+medAt(o,i+1))/2:medAt(o,i);
+  const nc=MC.length,V=MR.map((_,r)=>MC.map((_,c)=>at(M.pts[r*nc+c],t)));
+  let win=0;for(const o of M.pts)for(let i=M.start;i<M.start+9;i++)win=Math.max(win,medAt(o,i));
+  if(M.ov)M.ov.remove();
+  M.ov=L.imageOverlay(overlayURL(V,HBANDS,24),[[M.lats[0],M.lons[0]],[M.lats.at(-1),M.lons.at(-1)]],{interactive:false,className:'snowov'}).addTo(M.m);
+  const all=V.flat(),mx=Math.max(...all);
+  /* Valore sulla località: interpolato dalla griglia */
+  const fr=(p.lat-M.lats[0])/(M.lats[1]-M.lats[0]),fc=(p.lon-M.lons[0])/(M.lons[1]-M.lons[0]);
+  const r0=Math.max(0,Math.min(MR.length-2,Math.floor(fr))),c0=Math.max(0,Math.min(nc-2,Math.floor(fc))),dr=fr-r0,dc=fc-c0;
+  const here=V[r0][c0]*(1-dr)*(1-dc)+V[r0][c0+1]*(1-dr)*dc+V[r0+1][c0]*dr*(1-dc)+V[r0+1][c0+1]*dr*dc;
+  const day=key.slice(0,10),hh=key.slice(11,13)+(fr30?':30':':00'),today=romeHourKey().slice(0,10);
+  document.getElementById('mt-'+p.id).textContent=(off===0?'adesso, ':'tra '+(off===.5?'mezz\'ora, ':Math.floor(off)+(Math.floor(off)===1?' ora':' ore')+(fr30?' e mezza, ':', ')))+(day===today?'oggi':'domani')+' alle '+hh;
+  let txt;
+  if(win<0.05)txt='Nelle prossime 8 ore non è prevista neve nella zona.';
+  else if(mx<0.05)txt='A quest\'ora non nevica nella zona, ma nevica in altre ore delle prossime 8.';
+  else{const at=all.indexOf(mx),dN=(M.lats[Math.floor(at/nc)]-p.lat)*111,dE=(M.lons[at%nc]-p.lon)*111*Math.cos(p.lat*Math.PI/180);
+    const ns=dN>2?'nord':dN<-2?'sud':'',ew=dE>2?'est':dE<-2?'ovest':'',dir=ns&&ew?ns+'-'+ew:ns||ew,km=Math.round(Math.hypot(dN,dE));
+    txt=`Qui ${r1(here)} cm/h. Il punto con più neve fa ${r1(mx)} cm/h`+(!dir?', vicino alla località.':` ed è circa ${km} km a ${dir} della località.`)}
+  document.getElementById('mi-'+p.id).textContent=txt;
+}
+
+/* Aggiorna le mini mappe senza ricaricare la pagina: nuovi dati e ora di partenza = ora attuale */
+async function refreshMini(){
+  const d=await cached('neve-locali-v6',10*60e3,()=>getJSON(locUrl())).catch(()=>null);if(!d||!DATA)return;LOCDATA=d;
+  const arr=Array.isArray(d)?d:[d];
+  DATA.forEach((p,pi)=>{const M=MINI[p.id];if(!M)return;M.pts=arr.slice(pi*NP,pi*NP+NP);M.times=M.pts[0]?.hourly?.time||[];
+    const s=M.times.indexOf(romeHourKey());M.start=s<0?0:s;try{drawMini(p)}catch(e){console.warn(e)}});
+}
+
+/* Dati già pronti, scaricati ogni 2 ore da GitHub (scripts/aggiorna.mjs). Se mancano o sono vecchi, la pagina li scarica da sola. */
+let DATA_TIME=null;
+async function fromRepo(){
+  const urls=[],h=location.hostname;
+  if(h.endsWith('.github.io')){const u=h.split('.')[0],r=location.pathname.split('/').filter(Boolean)[0];if(r)urls.push(`https://raw.githubusercontent.com/${u}/${r}/main/data/meteo.json`)}
+  urls.push('data/meteo.json');
+  for(const u of urls){
+    try{const r=await fetch(u+'?v='+Math.floor(Date.now()/600000),{cache:'no-store'});if(!r.ok)continue;
+      const j=await r.json();if(j?.modelli?.some(Boolean)&&Date.now()-Date.parse(j.aggiornato)<6*3600e3)return j}catch(e){}
   }
-  /* Anteprima del mare: onda più alta di oggi e domani a Tre Ponti, presa dal vivo da Open-Meteo */
-  fetch('https://marine-api.open-meteo.com/v1/marine?latitude=43.808&longitude=7.81&daily=wave_height_max&timezone=Europe%2FRome&forecast_days=2')
-    .then(r=>r.json()).then(o=>{const h=o.daily.wave_height_max,i=h[1]>h[0]?1:0;
-      document.getElementById('seapill').textContent=`Tre Ponti: onde fino a ${h[i].toFixed(1).replace('.',',')} m ${i?'domani':'oggi'}`}).catch(()=>{});
+  return null;
+}
+async function load(){
+  document.getElementById('locs').innerHTML='<div class="msg">Caricamento previsioni da quattro modelli meteo…</div>';
+  let vals;
+  const repo=await fromRepo();
+  if(repo){vals=repo.modelli;LOCDATA=repo.locali||null;DATA_TIME=repo.aggiornato}
+  else try{
+    vals=await cached('neve-modelli-v4',30*60e3,async()=>{
+      const res=await Promise.allSettled(MODELS.map(m=>getJSON(url(m.id))));
+      const v=res.map(r=>r.status==='fulfilled'?r.value:null);
+      if(!v.some(Boolean))throw new Error(res[0].reason?.message||'nessuna risposta');
+      return v});
+  }catch(e){fail(e.message);return}
+  try{DATA=build(vals.map(trimPast));renderSum();renderLocs()}catch(e){fail(e.message);return}
+  /* Mini mappe: i dati si scaricano la prima volta che se ne vede una */
+  /* Mini mappe: dati nuovi da Open-Meteo, poi di nuovo ogni 10 minuti (se non arrivano, si usano quelli di GitHub) */
+  const goMini=async()=>{LOCDATA=await cached('neve-locali-v6',10*60e3,()=>getJSON(locUrl())).catch(()=>LOCDATA);DATA.forEach((p,pi)=>{try{setupMini(p,pi)}catch(e){console.warn(e)}});setInterval(refreshMini,10*60e3)};
+  const minis=[...document.querySelectorAll('.mm')];
+  if('IntersectionObserver' in window){const io2=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io2.disconnect();goMini()}},{rootMargin:'300px'});minis.forEach(el=>io2.observe(el))}else goMini();
+}
+
+document.addEventListener('click',e=>{
+  const g=e.target.closest('[data-go]');
+  if(g){document.getElementById(g.dataset.go)?.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});return}
+  if(!DATA){if(e.target.id==='retry')load();return}
+  const d=e.target.closest('.day');
+  if(d){const p=DATA.find(x=>x.id===d.dataset.p),i=+d.dataset.i;state.sel[p.id]=i;
+    d.parentElement.querySelectorAll('.day').forEach(b=>b.setAttribute('aria-pressed',b===d));
+    document.getElementById('d-'+p.id).innerHTML=detail(p,p.days[i]);
+    document.getElementById('hd-'+p.id).textContent=fmtLong(p.days[i].t);hourChart(p);return}
+  const wp=e.target.closest('[data-wp]');
+  if(wp){const p=DATA.find(x=>x.id===wp.dataset.wp),el=document.getElementById('win-'+p.id);state.win??={};state.win[p.id]=Math.max(0,Math.min(+el.max,(state.win[p.id]||0)+wp.dataset.dv*6));el.value=state.win[p.id];snowChart(p);return}
+  const hp=e.target.closest('[data-hp]');
+  if(hp){const p=DATA.find(x=>x.id===hp.dataset.hp);state.hour[p.id]=Math.max(0,Math.min(8,(state.hour[p.id]??0)+hp.dataset.dv*.5));syncHour(p);return}
+  const mp=e.target.closest('[data-map]');
+  if(mp){state.mapDays=+mp.dataset.map;mp.parentElement.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b===mp));state.drawMap?.();return}
+  const mb=e.target.closest('[data-mode]');
+  if(mb){const p=DATA.find(x=>x.id===mb.dataset.mode);state.mode[p.id]=mb.dataset.v;
+    mb.parentElement.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b===mb));snowChart(p);return}
+  const k=e.target.closest('[data-key]');
+  if(k){const p=DATA.find(x=>x.id===k.dataset.key),h=state.hidden[p.id];h[k.dataset.m]=!h[k.dataset.m];
+    document.querySelectorAll(`#${p.id} [data-m="${k.dataset.m}"]`).forEach(b=>b.classList.toggle('off',!!h[k.dataset.m]));
+    snowChart(p);fzChart(p)}
+});
+
+document.addEventListener('input',e=>{const w=e.target.dataset?.win;if(w&&DATA){state.win??={};state.win[w]=+e.target.value;snowChart(DATA.find(x=>x.id===w));return}
+  const id=e.target.dataset?.hr;if(!id||!DATA)return;const p=DATA.find(x=>x.id===id);state.hour[id]=+e.target.value;drawMini(p)});
+/* Sorpresa: da telefono (senza mouse) si mostra toccando l'angolo */
+document.querySelectorAll('.egg').forEach(el=>el.addEventListener('click',e=>e.currentTarget.classList.toggle('on')));
+let lastHour=camKey();
+setInterval(()=>{const h=camKey();if(h===lastHour)return;lastHour=h;
+  document.querySelectorAll('img[data-cam]').forEach(im=>{im.src=camSrc(im.dataset.cam,h)});
+  document.querySelectorAll('.camtime').forEach(el=>{el.textContent='Immagine delle '+h.slice(11,16)})},60000);
+load();
 }
 </script>
 </body>
