@@ -1,6 +1,6 @@
 // Scarica le previsioni da Open-Meteo e le salva in data/meteo.json.
 // Lo esegue GitHub ogni 2 ore (vedi .github/workflows/aggiorna.yml).
-// I parametri devono restare uguali a quelli di index.html.
+// I parametri devono restare uguali a quelli di neve.html.
 import { writeFile, mkdir } from 'node:fs/promises';
 
 const PLACES = [
@@ -9,13 +9,13 @@ const PLACES = [
   { id: 'oggia',    lat: 43.9990, lon: 7.8330, alt: 1167, zone: [[43.94, 7.785], [44.035, 7.905]] },
   { id: 'turini',   lat: 43.9775, lon: 7.3914, alt: 1607, zone: [[43.925, 7.30], [44.01, 7.47]] },
 ];
-// Stesso ordine di MODELS in index.html
+// Stesso ordine di MODELS in neve.html
 const MODELS = ['ecmwf_ifs025', 'icon_seamless', 'meteofrance_seamless', 'italia_meteo_arpae_icon_2i'];
 // Modelli per le mini mappe (valore di mezzo)
 const MAP_MODELS = ['icon_seamless', 'italia_meteo_arpae_icon_2i', 'meteofrance_seamless'];
 const MR = [0, 1, 2, 3, 4], MC = [0, 1, 2, 3, 4, 5, 6];
 
-// Stessa griglia di gridFor() in index.html
+// Stessa griglia di gridFor() in neve.html
 function gridFor(p) {
   const [[s, w], [n, e]] = p.zone, cla = (s + n) / 2, clo = (w + e) / 2, k = Math.cos(cla * Math.PI / 180);
   const hKm = (n - s) * 111, wKm = (e - w) * 111 * k, W = Math.max(wKm, hKm * 2.6) * 1.08, H = Math.max(hKm, wKm / 1.2) * 1.08;
